@@ -1,0 +1,394 @@
+AI MUNIM
+GST, Collections & Cash Flow on Autopilot
+PRODUCT FLOW & FUNCTIONAL BLUEPRINT
+A configurable, AI-assisted accounting and finance operations platform
+for trading, manufacturing, service and other SMEs in India
+Prepared as a working product blueprint • 03 November 2026
+
+
+1. Executive Summary
+AI Munim is a multi-business, configurable accounting and finance operations application for Indian small and mid-sized businesses. It captures business transactions, maintains accounting records, supports GST preparation and reconciliation, manages receivables and payables, forecasts cash flow, and provides an AI assistant that explains business finances using verified application data.
+The platform is designed for different SME operating models without hard-coding one industry’s terminology or process. Trading, manufacturing, services, distribution and consignment businesses can configure transaction types, tax settings, approval rules, chart-of-account mappings, reminders and reports.
+The problem it solves
+Financial information is scattered across accounting software, spreadsheets, bank statements, email, WhatsApp and paper invoices.
+GST data is often reconciled manually, creating missed invoices, ITC mismatches and last-minute filing pressure.
+Owners do not have a timely view of customer dues, supplier commitments, actual cash position and future cash gaps.
+Payment follow-ups depend on staff memory; overdue invoices and promised payment dates are not consistently tracked.
+Business owners need explanations and decisions, not only accounting ledgers and static reports.
+The solution in one line
+One configurable platform with an Admin/Owner workspace, Finance Team workspace and optional Client/Supplier interaction channels, all connected to a common financial data model, audit trail and AI intelligence layer.
+What it should deliver
+Capture and classify sales, purchases, expenses, credit/debit notes, receipts, payments and bank transactions.
+Maintain double-entry accounting records with traceable source documents and approval history.
+Calculate GST on transactions and prepare reconciliation and return-working data for review.
+Track receivables and payables with ageing, promises-to-pay, reminders and dispute reasons.
+Forecast cash position using expected collections, scheduled payments and bank balances.
+Answer natural-language questions using permission-filtered, traceable financial data.
+2. Product Principles & Universal Terminology
+Principle	How AI Munim applies it
+Configure, don't hard-code	Business types, financial years, tax registrations, chart of accounts, document numbering, approval paths, reminder rules and reports are configurable.
+One transaction, one source record	Each invoice, receipt, payment, journal and bank line has a unique identity and links to its supporting documents.
+Accounting history is immutable	Posted entries are not silently overwritten. Corrections use reversal, credit/debit note or controlled adjustment with audit history.
+Role-based access at data level	Users see only companies, branches, accounts, customers, suppliers and actions permitted by their role.
+AI assists; controls govern	AI can extract, classify, reconcile and recommend. Posting, filing, payment release and other material actions require configured approval.
+Industry-neutral core	Common accounting concepts are shared; optional industry workflows and custom fields are enabled by configuration.
+
+Universal terminology
+Business wording	AI Munim terminology / concept	Notes
+Customer bill / invoice	Sales Invoice	Revenue and output tax transaction.
+Vendor bill / purchase bill	Purchase Invoice	Expense, asset or inventory purchase and input tax transaction.
+Money received	Receipt	Customer receipt, advance or other incoming money.
+Money paid	Payment	Supplier payment, expense payment or other outgoing money.
+Credit note / debit note	Credit Note / Debit Note	Adjustment linked to the original transaction where applicable.
+Bank statement line	Bank Transaction	Imported or connected bank activity awaiting matching.
+Outstanding report	Receivables / Payables Ageing	Open balances grouped by due-date ageing.
+GST working	GST Compliance Workspace	Return preparation, reconciliation and exception review.
+Cash forecast	Cash Flow Forecast	Projected opening, inflows, outflows and closing cash.
+
+3. Portals, Users & Authentication
+Recommended initial model: one application and one database with role-based workspaces. A separate external portal can be introduced for customers or suppliers when the business case requires it.
+Workspace	Typical users	Primary access
+Owner / Admin	Business owner, finance head, authorized administrator	Company-wide dashboards, settings, approvals, accounting, GST, cash flow, AI analytics and audit logs.
+Finance Team	Accountant, billing executive, GST executive, collections executive, purchase/accounts payable executive	Assigned companies/branches and permitted modules; create and process transactions; reconcile and prepare reports.
+Approver	Owner, finance controller or delegated manager	Review and approve transactions, journals, GST working papers, payment batches and exceptions within limits.
+External user (optional)	Customer or supplier contact	Only their own invoice statements, payment status, shared documents, confirmations or dispute/ticket interactions.
+
+Sign-in and routing
+1.User signs in through the configured identity provider (e.g. Google or secure email/password).
+2.System identifies the user, active organization memberships, role and assigned branches.
+3.User is routed to the correct workspace; users with multiple roles can switch organization/workspace where authorized.
+4.Unknown or deactivated users are denied access; no open self-registration for internal finance users.
+5.All entity access is enforced through backend authorization and row-level rules, not only by hiding menu items.
+Security baseline
+Multi-factor authentication for privileged users where supported.
+Encryption in transit and at rest; secrets and API credentials stored securely, never in ordinary records.
+Company/tenant isolation and row-level authorization on every financial entity.
+Maker-checker controls for sensitive actions and configurable approval limits.
+Audit log for create, edit, approve, post, reverse, export, file and payment-related actions.
+Session revocation and immediate access disablement when a user is deactivated.
+4. Roles & Permissions
+Module / action	Owner / Admin	Finance Executive	GST Executive	Collections Executive	Approver	External user
+Business dashboard	Full	Assigned scope	GST/assigned scope	Receivables scope	Read/approve scope	Own summary only
+Sales & purchase documents	Full	Create/edit assigned	Read/reconcile	Read sales dues	Approve as configured	Own shared documents
+Ledger & journals	Full	Prepare / limited post	Read	Read limited	Approve/post	No access
+GST workspace	Full	Read / prepare	Prepare & reconcile	No access	Approve working	No access
+Receivables	Full	View/update	Read limited	Manage assigned	Approve write-offs/credit actions	Own statement
+Payables	Full	View/update	Read limited	No access	Approve payments	Own statement
+Bank reconciliation	Full	Assigned accounts	Read limited	Read limited	Approve exceptions	No access
+Cash-flow forecast	Full	Read / contribute	Read limited	Contribute collection inputs	Read	No access
+Settings & team	Full	No	No	No	Limited approval rules	No
+AI assistant	All permitted data	Permitted data	GST permitted data	Collection permitted data	Approval permitted data	No or restricted
+
+Permission names and combinations must be configurable. A person may hold more than one role, but permissions must never exceed the organization's configured policy.
+5. End-to-End AI Munim Flow
+Macro flow
+Step	Input / event	System action	Output / control
+1. Capture	Invoice, bill, receipt, payment, bank line, spreadsheet or manual entry	Upload/import, OCR extraction, validation and duplicate checks	Draft transaction with source attachment
+2. Classify	Extracted or entered transaction details	Suggest party, ledger, tax code, GST rate, place of supply and cost centre	Suggested accounting/tax treatment with confidence
+3. Validate	Draft transaction	Check mandatory fields, arithmetic, party master, GSTIN, tax logic, duplicate and period rules	Validation errors and warnings
+4. Review & approve	Validated draft	Route based on document type, value, risk and role	Approved or returned for correction
+5. Post	Approved transaction	Create balanced ledger entries and update sub-ledgers/tax registers	Posted transaction; immutable audit trail
+6. Reconcile	Bank data, supplier data and GST portal data	Match transactions and identify missing, duplicate or mismatched records	Reconciliation status and exception queue
+7. Act	Due invoices, tax deadlines, payment commitments	Generate reminders, tasks, payment proposals and filing workpapers	User-approved actions and notifications
+8. Analyse	Posted and reconciled data	Update dashboards, ageing, forecasts and AI insights	Decision-ready financial view
+
+Primary transaction lifecycle
+Captured → Draft → AI Extracted / Classified → Validated → Awaiting Approval → Approved → Posted → Reconciled (where applicable) → Closed / Settled. Exceptions may move to Needs Correction, Disputed, On Hold or Reversed. Status changes must be logged.
+Core control rule
+Do not let AI silently post uncertain or high-impact entries. AI suggestions should display the source document, extracted values, proposed ledger/tax treatment, confidence or reason for uncertainty, and a clear approve/edit/reject action.
+6. Module 1 — Company Setup & Masters
+Company onboarding
+Legal name, trade name, constitution, registered and operating addresses, contact details and logo.
+PAN, GSTIN(s), state, registration type, return frequency and applicable tax registrations.
+Financial year, books start date, base currency, time zone, branches, locations and document numbering series.
+Opening balances, trial balance import and migration mapping from existing accounting software.
+Industry profile: trading, manufacturing, services, distribution, consignment or other.
+Master data
+Master	Key fields / rules
+Customer	Name, legal name, GSTIN, PAN where applicable, billing/shipping address, state, contact, credit terms, credit limit, opening balance.
+Supplier	Name, GSTIN, PAN where applicable, address, contact, payment terms, bank details with verification controls.
+Chart of Accounts	Account code, name, group, account type, tax treatment, control account flag, active status.
+Items / Services	Code, description, HSN/SAC, unit, tax rate, purchase/sales account mapping, inventory flag where applicable.
+Tax codes	CGST/SGST/IGST/cess components, rate, effective dates, transaction applicability and configuration.
+Cost centres / projects	Name, code, owner, branch, project or department mapping.
+Banks / cash accounts	Account name, masked account details, opening balance, statement format or connector.
+Users & approval matrix	Role, company/branch scope, limits, workflow and active status.
+
+7. Module 2 — Smart Accounting & Transaction Management
+Transaction types
+Transaction	Minimum workflow	Key outputs
+Sales invoice	Select customer → add items/services → tax calculation → validate → approve → post	Receivable, revenue, output GST, invoice PDF
+Purchase invoice	Select supplier → capture bill → map expense/asset/inventory → GST validation → approve → post	Payable, expense/asset/purchase, input GST register
+Receipt	Select customer/invoice → amount/date/mode/reference → allocate → approve if needed	Customer balance reduced; bank/cash updated
+Payment	Select supplier/invoice → amount/date/mode/reference → allocate → approve → record	Supplier balance reduced; bank/cash updated
+Expense claim / voucher	Employee/vendor → category → tax → attachment → approval → post	Expense ledger and payable/reimbursement
+Credit / debit note	Link original invoice where relevant → reason → tax impact → approve → post	Adjusted receivable/payable and tax registers
+Journal voucher	Select accounts → debit/credit lines → narration → supporting proof → approval → post	Balanced general ledger entry
+Bank charges / interest	Import or enter → classify → review → post	Bank and expense/income ledgers
+
+AI invoice processing
+6.User uploads PDF, image or supported e-invoice data, or imports a file from a configured source.
+7.OCR/document AI extracts supplier/customer, invoice number/date, GSTIN, line items, HSN/SAC, taxable value, tax components, total and due date.
+8.System checks duplicate invoice number, GSTIN format, arithmetic, tax split, date/period and master-data match.
+9.AI proposes party, ledger, item, cost centre and tax-code mapping based on approved history and configured rules.
+10.User reviews highlighted uncertain fields; corrections can improve that organization's future suggestions under controlled learning settings.
+11.Approved document is posted to accounting and GST registers; original file and extraction/audit history remain linked.
+Accounting engine requirements
+Double-entry bookkeeping: every posted journal must balance.
+Separate draft, approved and posted states; posted entries cannot be directly overwritten.
+Support accrual and cash-basis reporting configurations where legally and operationally appropriate.
+Maintain sub-ledgers for customers, suppliers, tax, bank/cash and other control accounts.
+Handle opening balances, reversals, write-offs, advances, partial settlement and foreign currency only if included in the approved scope.
+Provide trial balance, general ledger, account ledger, P&L, balance sheet and cash/bank book.
+8. Module 3 — GST Intelligence & Compliance
+This module is intended to prepare, validate and reconcile GST data. Actual return filing, payment and portal submission must use authorized GSTN/GSP/ASP integrations and a verified filing process. The application must not claim a return is filed merely because a working paper is prepared.
+GST transaction flow
+12.Maintain GST registrations, state/place-of-supply details, tax codes, HSN/SAC and transaction classifications.
+13.Calculate applicable tax components on sales and purchase transactions using effective-dated configuration and validated rules.
+14.Generate outward supply register from posted sales invoices, credit notes, debit notes, advances and adjustments as applicable.
+15.Import or retrieve GSTR-2B data through an authorized integration or supported upload.
+16.Match purchase register with GSTR-2B using GSTIN, document number, date, taxable value and tax amounts, with configurable tolerance rules.
+17.Classify exceptions: matched, books-only, portal-only, value mismatch, tax mismatch, duplicate, GSTIN mismatch, period mismatch and review required.
+18.Prepare GSTR-1 and GSTR-3B working summaries and reconcile totals against books and source registers.
+19.Run pre-filing checks, obtain reviewer approval, submit through authorized integration, capture acknowledgement/reference and preserve filing evidence.
+GST workspace pages
+Page	Purpose / key functions
+GST Overview	Tax period selector, filing calendar, output tax, input tax, estimated net liability, filing status and critical alerts.
+Sales Register	Outward invoices/notes, B2B/B2C classification, tax summary, export and exception filters.
+Purchase Register	Supplier invoices, ITC candidate amounts, blocked/ineligible review flags where configured, supplier-wise detail.
+GSTR-2B Reconciliation	Import statement, auto-match, manual match, mismatch categories, supplier follow-up and resolution notes.
+GSTR-1 Preparation	Return tables/summary, missing fields, document-level validation and export/authorized submission.
+GSTR-3B Preparation	Tax liability, ITC summary, reversals/adjustments and tax payment working; tie-out to books.
+GST Filing History	Period, return type, preparer, reviewer, submission status, ARN/acknowledgement and filed copy.
+GST Settings	GSTINs, return frequency, tax codes, tolerances, mapping rules and integration configuration.
+
+Important GST controls
+Use effective dates and jurisdiction-aware tax configuration; do not rely on an unmaintained hard-coded rate table.
+Clearly distinguish book ITC, portal-reported ITC, eligible ITC after review and ITC actually claimed in a filed return.
+Show source and calculation behind every tax number; allow drill-down to underlying invoices.
+Flag missing or inconsistent data rather than silently assuming a tax treatment.
+Keep filing periods locked after filing, with controlled amendment/adjustment workflows.
+Validate current statutory rules with qualified GST professionals and authoritative GST sources before release.
+9. Module 4 — Receivables & Collections Autopilot
+Receivables lifecycle
+Sales invoice posted → due date calculated from customer terms → reminder schedule generated → payment promise captured → receipt imported/entered → invoice allocation → balance updated → overdue item closed or escalated.
+Features
+Customer-wise, invoice-wise and branch-wise outstanding balances.
+Ageing buckets configurable by business (e.g. not due, 1–30, 31–60, 61–90 and over 90 days).
+Promise-to-pay date, promised amount, follow-up owner, contact attempt and dispute reason.
+Reminder templates for email and WhatsApp, with schedule, quiet hours, language and escalation settings.
+Payment links or gateway references where supported by an approved provider.
+Collection effectiveness, days sales outstanding (DSO), overdue trend and customer credit exposure.
+Collection automation
+Trigger	Automated action	Control
+Invoice posted	Create due-date task and reminder schedule	Use customer terms and business policy.
+Reminder date reached	Prepare/send email or WhatsApp reminder	Template and channel enabled; opt-out and consent rules respected.
+Invoice overdue	Escalate to collection owner and show overdue banner	Escalation days configurable.
+Customer promises payment	Record promise date, amount and note	User confirms; missed promise creates follow-up.
+Receipt identified	Suggest invoice allocation	User confirms ambiguous or partial allocations.
+Dispute raised	Mark disputed and create resolution task	Dispute does not erase the receivable.
+
+10. Module 5 — Payables & Supplier Payment Control
+Supplier-wise and invoice-wise outstanding balances with due dates and ageing.
+Upcoming payment calendar by day, supplier, branch and bank account.
+Duplicate bill and changed bank-detail alerts.
+Payment proposal based on due date, cash availability, priority, discount terms and user policy.
+Approval matrix by amount, supplier, payment type and bank account.
+Payment batch preparation, export/integration where supported, and payment status tracking.
+Supplier statement reconciliation and disputed-bill workflow.
+AI Munim may recommend which bills to pay first, but it must not independently release funds. Bank-detail changes and payment release require strong verification and authorized approval.
+11. Module 6 — Bank Reconciliation & Cash Management
+Bank reconciliation flow
+20.Import bank statement using supported CSV/Excel formats or an authorized bank-data connection.
+21.Normalize date, narration, debit, credit, reference and balance fields.
+22.Suggest matches against receipts, payments, bank charges, transfers and journals.
+23.Apply exact/near-match rules with configurable date and amount tolerances.
+24.Send unmatched, duplicate and ambiguous lines to an exception queue.
+25.User confirms matches; approved unmatched items can be classified and posted.
+26.Generate reconciliation statement with opening balance, matched items, outstanding items and closing balance.
+Cash-flow forecast
+Forecast component	Data source
+Opening available cash	Reconciled bank and cash ledger balances, with unreconciled balance clearly identified.
+Expected inflows	Open customer invoices, promise-to-pay dates, historical collection behaviour and confirmed advances.
+Expected outflows	Supplier bills, payroll/operating commitments entered by the business, loan/EMI schedules and tax payment estimates.
+Adjustments	Recurring transactions, one-off planned purchases, capex and manual forecast entries.
+Projected closing cash	Opening cash + forecast inflows − forecast outflows, by day/week/month.
+
+Forecast horizons: 7, 30, 60 and 90 days, configurable.
+Base, optimistic and cautious scenarios; assumptions displayed and editable.
+Cash-shortage alerts with the date and primary drivers.
+Separate actual bank balance, book balance and projected balance.
+Forecast confidence should reflect data quality and payment-history coverage.
+12. Module 7 — AI Munim Assistant & Financial Intelligence
+Assistant capabilities
+User question	Expected answer / action
+How much GST liability is estimated for this period?	Show working calculation, tax components, ITC assumptions, exceptions and source transactions.
+Which customers are overdue?	Rank overdue invoices by amount, age, promise status and assigned collection owner.
+What payments are due next week?	List approved and pending supplier bills, amounts, due dates and approval status.
+Will cash be sufficient for the next 30 days?	Show forecast by date, assumptions, expected inflows/outflows and likely shortfall.
+Why is GSTR-2B different from our purchase register?	List unmatched and mismatched documents with value/tax differences and suggested checks.
+Which expenses increased this month?	Compare categories and periods, show amount/percentage movement and source vouchers.
+Show customers whose credit exposure exceeds their limit.	List exposure, limit, overdue balance and recent payment behaviour.
+
+AI design rules
+Use permission-filtered, tenant-specific data; never expose another company's data.
+Prefer structured queries and deterministic calculations for balances, GST totals, ageing and forecasts; use the language model to explain results.
+Every material answer should show the period, filters, calculation basis and links/references to source records.
+If data is incomplete or stale, state the limitation and do not invent a number.
+Separate facts, estimates, recommendations and assumptions visually.
+Require confirmation before sending messages, changing records, posting entries, filing returns or initiating payments.
+Log prompts/actions and the records accessed according to privacy and retention policy.
+13. Dashboards & Reports
+Dashboard	KPI tiles / alerts	Charts and drill-downs
+Owner overview	Sales, purchases, gross margin where configured, receivables, payables, bank balance, estimated GST liability, cash forecast, overdue items	Revenue/expense trend, cash trend, receivables ageing, payables due, GST period comparison.
+Finance team	My pending vouchers, approvals, bank lines to reconcile, unmatched GST invoices, due follow-ups	Work queue by status, ageing of tasks, exceptions by category.
+GST overview	Output tax, ITC in books, GSTR-2B matched/unmatched, estimated net liability, return status	Tax trend, ITC match rate, exception categories, tax by registration.
+Collections overview	Total outstanding, overdue amount, collections this month, promises due/missed, DSO	Ageing, customer concentration, collection trend, owner performance.
+Cash-flow overview	Available cash, expected receipts, payments due, forecast closing cash, projected shortfall	Daily/weekly forecast, scenario comparison, inflow/outflow breakdown.
+
+All dashboards should support date range, company, GST registration, branch, customer/supplier, account and status filters where relevant. Export permissions must be role-controlled.
+14. Settings & Configuration
+Settings area	Admin-configurable items
+Business profile	Legal details, logo, address, currency, time zone, financial year, branches and GST registrations.
+Accounting	Chart of accounts, numbering series, voucher types, opening balances, cost centres and accounting policies.
+Tax & GST	GSTINs, return frequency, tax codes, HSN/SAC master, mapping, tolerances and filing integrations.
+Document capture	Allowed file types, OCR rules, extraction fields, duplicate logic and retention settings.
+Approval workflows	Document type, amount thresholds, maker/checker roles, escalation and approval sequence.
+Receivables	Credit terms, credit limits, ageing buckets, reminder cadence, templates and escalation.
+Payables	Payment priorities, due-date rules, approval thresholds and supplier controls.
+Banking	Bank accounts, statement formats, connectors, matching tolerances and reconciliation policy.
+Communication	Email/WhatsApp provider credentials, templates, languages, consent/opt-out and send windows.
+AI controls	Enabled assistant topics, data access, confidence thresholds, action permissions and audit settings.
+Team & access	Users, roles, branch scope, active status, MFA policy and access review.
+Audit & retention	Log retention, document retention, export history and data deletion policy.
+
+15. Suggested Data Model — Base44 Entities
+The following is a proposed logical entity model for the AI Munim build. Exact table names, relationships and field types should be finalized after the accounting engine and multi-company strategy are confirmed.
+Entity	Key fields / relationships	Purpose
+Organization	name, legal_name, currency, FY, timezone, industry_profile	Tenant/business root.
+OrganizationMembership	organization_id, user_id, role_id, branch_scope, active	User access within each organization.
+Role / Permission	name, permission_key, limits	Configurable access control.
+Branch	organization_id, name, address, GST registration link	Branch/location setup.
+GSTRegistration	organization_id, GSTIN, state, registration_type, return_frequency	GST registration master.
+Party	organization_id, party_type, name, GSTIN, address, terms, credit_limit	Customer/supplier master.
+Account	organization_id, code, name, group, account_type, active	Chart of accounts.
+ItemService	organization_id, code, description, HSN_SAC, unit, tax_code_id	Goods/services master.
+TaxCode	organization_id, components, rate, effective_from, effective_to	Tax configuration.
+Document	organization_id, doc_type, doc_no, date, party_id, status, totals, source_file_id	Common header for sales/purchase/notes.
+DocumentLine	document_id, item_id, description, qty, rate, ledger_id, tax_code_id, taxable_value, tax_amount	Transaction lines.
+ReceiptPayment	organization_id, type, party_id, date, amount, mode, reference, status	Money received/paid.
+SettlementAllocation	receipt_payment_id, document_id, allocated_amount	Partial and full invoice allocation.
+JournalEntry	organization_id, date, voucher_type, source_document_id, status, posted_at	Accounting journal header.
+JournalLine	journal_entry_id, account_id, party_id, debit, credit, cost_centre_id	Double-entry lines.
+BankAccount / BankLine	bank account, statement id, date, narration, debit, credit, match status	Bank import and reconciliation.
+GSTPeriod / GSTReturn	GSTIN, period, return_type, status, totals, ARN, filed_at	GST working and filing history.
+GSTPortalDocument	GST period, supplier GSTIN, document no/date, taxable value, tax amounts	Imported GSTR-2B/portal data.
+ReconciliationMatch	source_record, target_record, match_type, differences, status, reviewed_by	Bank/GST/party reconciliation.
+Reminder / Promise	party_id, document_id, due date, promise date, amount, owner, status	Collections and follow-up control.
+PaymentProposal	supplier, invoices, proposed amount, bank account, approval status	Supplier payment planning.
+CashForecastSnapshot	date, scenario, opening, inflows, outflows, closing, assumptions	Forecast history.
+Attachment	file, entity_type, entity_id, uploaded_by, checksum	Source documents.
+ApprovalRequest	entity_type, entity_id, requested_by, approver, status, decision_note	Maker-checker workflow.
+AuditLog	entity_type, entity_id, action, before/after reference, actor, timestamp	Immutable activity trail.
+NotificationLog	recipient, channel, template, status, sent_at, related_record	Communication tracking.
+AIInteractionLog	user, prompt category, data scope, response reference, action approval	AI governance and traceability.
+
+16. Core Automations
+ID / trigger	Automation	Expected result
+A1 — Document uploaded	Create draft, extract fields, run duplicate and validation checks, notify assigned reviewer.	Draft transaction with extraction and validation report.
+A2 — Transaction approved	Create balanced journal entries, update party/tax registers and document status.	Posted transaction and audit record.
+A3 — Invoice due schedule	Create reminder tasks based on payment terms and reminder settings.	Due/overdue collection work queue.
+A4 — Receipt imported	Suggest invoice allocation using party, amount, reference and date.	Suggested settlement; ambiguous cases reviewed.
+A5 — Bank statement imported	Normalize lines and suggest matches to book transactions.	Reconciliation queue.
+A6 — GSTR-2B imported	Match portal documents against purchase register and classify exceptions.	GST reconciliation dashboard.
+A7 — GST period close approaching	Check missing documents, mismatches and return working completeness.	Filing readiness checklist and alerts.
+A8 — Payment proposal generated	Group due supplier bills and check approval thresholds/cash forecast.	Reviewable payment proposal; no automatic release.
+A9 — Forecast refreshed	Recalculate projected cash from current balances and open commitments.	Updated forecast and shortage alerts.
+A10 — Scheduled daily	Send role-based summary of due collections, approvals, payables and GST tasks.	Daily digest and task queue.
+A11 — Sensitive master changed	Require verification for supplier bank changes, tax mapping changes and approval policy changes.	Controlled change with audit trail.
+
+Automation execution requirements
+Use backend functions or scheduled jobs for trusted calculations and integrations.
+Make automations idempotent: retries must not create duplicate journals, reminders or payment instructions.
+Record trigger, input references, execution status, errors, retries and final outcome.
+Provide Admin monitoring for failed jobs and a safe retry mechanism.
+Never treat a notification as proof that an external payment or statutory filing succeeded.
+17. Navigation Map
+Owner / Admin workspace	Finance workspace	Optional external portal
+Overview	My work queue	My statements
+Sales & purchase	Sales / purchase entry	Shared invoices
+Receivables	Receivables / collections	Payment confirmation / dispute
+Payables	Payables / payment proposals	Supplier statement / query
+Accounting	Ledgers / journals	—
+Banking	Bank reconciliation	—
+GST compliance	GST preparation / reconciliation	—
+Cash flow	Cash forecast	—
+Reports & AI analytics	Permitted reports / AI assistant	—
+Team & approvals	My approvals / profile	Profile
+Settings & audit	—	—
+
+The final navigation should be role-aware and configurable. The same user may have different menus in different organizations.
+18. Implementation Phases & Acceptance Criteria
+Phase	Scope	Done when
+1. Foundation	Organization/branch setup, authentication, memberships, roles, masters, chart of accounts, audit log and import templates.	Admin can create an organization, configure users and masters, and enforce company-level access.
+2. Accounting core	Sales/purchase invoices, receipts/payments, credit/debit notes, journals, double-entry posting, ledgers and core financial reports.	A complete sample transaction cycle posts balanced entries and updates party balances and reports correctly.
+3. GST intelligence	Tax calculation, GST registers, GSTR-2B import/reconciliation, GSTR-1 and GSTR-3B working papers, filing status and audit evidence.	A test period reconciles to source records; mismatches are visible; return working can be reviewed and approved.
+4. Collections & payables	Ageing, reminders, promises-to-pay, supplier dues, payment proposals and approval workflows.	A test invoice moves from due to reminder to receipt allocation; supplier payments are proposed and approved.
+5. Banking & cash flow	Bank import, matching, reconciliation, cash forecast and scenario analysis.	Imported bank lines can be reconciled and forecast assumptions can be traced to underlying records.
+6. AI assistant & analytics	Natural-language queries, explanations, exception summaries, recommendation cards and AI audit.	AI answers match deterministic reports, respect permissions and cite/identify source records.
+7. Integrations & rollout	Authorized GST integration, email/WhatsApp, accounting migration, bank data connectivity, UAT, training and production monitoring.	End-to-end UAT passes, security review is complete and support/rollback processes are documented.
+
+19. MVP Scope — What to Build First
+To reduce risk, start with a reliable accounting foundation and a narrow but complete end-to-end workflow. Do not begin by building every AI feature at once.
+Recommended MVP
+Organization, GST registration, users, roles, customers, suppliers and chart of accounts.
+Sales invoice, purchase invoice, receipt, payment and credit/debit note.
+Double-entry ledger posting, party balances, trial balance, P&L and balance sheet.
+GST tax calculation, sales/purchase registers and GSTR-2B upload/reconciliation.
+Receivables ageing, due-date reminders and manual/assisted receipt allocation.
+Basic bank statement import and reconciliation.
+Cash position and 30-day cash-flow forecast.
+AI assistant limited to read-only questions over validated accounting data.
+Defer until the core is proven
+Automatic filing or payment execution.
+Complex manufacturing production costing and inventory valuation.
+Advanced consolidation across many legal entities.
+Full payroll, HR, lending, credit scoring or investment features.
+Autonomous AI posting or autonomous supplier payment release.
+Deep integrations with every accounting platform before core data mapping is stable.
+20. Open Decisions Before Development
+Decision	Options / question	Recommended starting point
+Product architecture	Standalone accounting platform, integration layer, or hybrid?	Standalone core with optional import/export and integrations.
+Multi-tenant model	One organization per workspace or multiple companies under one owner?	Support multiple organizations and memberships from the data model.
+Accounting scope	Full accounting from day one or GST/collections-led MVP?	Build accounting core first; otherwise GST and cash reports will lack a reliable ledger.
+Inventory integration	Basic item master or full stock ledger and valuation?	Basic item/service master initially; define a separate inventory phase.
+GST integration	Manual upload, GSP/ASP integration or both?	Start with supported uploads and build authorized integration after validation.
+Bank connectivity	Statement upload or account aggregator/open banking route?	CSV/Excel import first, then evaluate regulated/authorized connectivity.
+Payments	Record-only, payment link, or bank payment initiation?	Record and propose payments first; no automatic fund release.
+Client/supplier portal	Needed in MVP?	Defer; start with secure statements and reminders through approved channels.
+AI autonomy	Read-only insights or ability to create/update records?	Read-only first; add draft creation with human approval.
+Industry workflows	Which sector gets first specialist workflow?	Launch common SME accounting; pilot trading and service firms before manufacturing extensions.
+
+21. Non-Functional Requirements & Risk Controls
+Accuracy: accounting and tax calculations must be deterministic, tested and version-controlled.
+Reliability: backups, restore testing, monitoring, job retry handling and incident response.
+Performance: pagination, indexed queries, background imports and large-ledger handling.
+Privacy: data minimization, tenant isolation, access logs and retention controls.
+Auditability: every posted amount must drill down to the source transaction and supporting document.
+Compliance: validate applicable GST, accounting, privacy, e-invoice and e-way bill requirements with qualified professionals and current official guidance.
+Interoperability: documented import/export formats and stable integration APIs.
+Usability: clear status labels, exception-first queues, guided onboarding and simple owner dashboard.
+22. Key User Journeys for Product Testing
+27.A billing executive uploads a sales invoice PDF; AI extracts details; user corrects one field; approver approves; system posts the invoice and creates a receivable.
+28.An accounts executive uploads a supplier bill; system detects a possible duplicate; user reviews it; approved bill posts to payable and purchase register.
+29.GST executive imports GSTR-2B; system matches most purchase invoices and highlights a tax-value mismatch; reviewer resolves or records a reason.
+30.Collections executive sees an invoice overdue by 15 days; sends an approved WhatsApp reminder; records customer promise; receipt later arrives and is allocated.
+31.Accounts executive imports bank statement; system suggests matches; user confirms and resolves unmatched bank charges.
+32.Owner asks whether cash will cover payroll and supplier payments over the next 30 days; assistant shows forecast, assumptions, likely shortfall date and underlying invoices.
+33.Approver reviews a supplier payment proposal; verifies supplier bank details and approves; payment is recorded only after confirmation from the payment channel.
+23. Source Reference & Design Adaptation
+This blueprint uses the uploaded “Universal Mini CRM — Framework Blueprint” as its structural reference. It carries forward the reference document's useful design patterns: configure-don't-code settings, role-based workspaces, data-level permissions, immutable history, modular pages, defined entities, trigger-based automations, dashboards, phased implementation and explicit open decisions.
+The CRM's lead → client → order → stage chain has been adapted into an accounting lifecycle: source document → validated transaction → approval → posted journal → reconciliation → collection/payment → cash-flow insight. CRM-specific sales pipeline, order execution, client service desk and delivery-stage mechanics have not been copied as core accounting features.
+The detailed AI Munim modules, workflows, entities, GST capabilities and controls in this document are proposed product design recommendations for the requested application. They are not claims that the uploaded CRM reference already contains accounting or GST functionality.
+Reference
+Universal Mini CRM — Framework Blueprint, dated 29 October 2026, uploaded by the user (14 pages).

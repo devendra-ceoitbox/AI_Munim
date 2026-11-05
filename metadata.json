@@ -1,0 +1,6 @@
+{
+  "name": "AI Munim – GST, Collections & Cash Flow Platform",
+  "description": "Smart accounting, automated GST compliance, collections autopilot, and real-time cash flow operations for Indian SMEs with high-concurrency Node.js and PostgreSQL backend architecture.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
