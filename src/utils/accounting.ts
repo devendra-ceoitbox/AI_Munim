@@ -264,3 +264,150 @@ export function calculateCashForecast(
     finalCash: Math.round(currentCash)
   };
 }
+
+/**
+ * Robust Client-Side CSV Parser supporting quoted fields and commas
+ */
+export function parseCsvText(csvText: string): { headers: string[]; rows: Record<string, string>[] } {
+  if (!csvText || !csvText.trim()) return { headers: [], rows: [] };
+
+  const lines = csvText.split(/\r?\n/).filter(line => line.trim().length > 0);
+  if (lines.length === 0) return { headers: [], rows: [] };
+
+  // Parse a CSV line taking quotes into account
+  const parseLine = (line: string): string[] => {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (char === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          current += '"';
+          i++; // skip escaped quote
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    result.push(current.trim());
+    return result;
+  };
+
+  const rawHeaders = parseLine(lines[0]);
+  const headers = rawHeaders.map(h => h.replace(/^["']|["']$/g, '').trim());
+
+  const rows: Record<string, string>[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const values = parseLine(lines[i]);
+    if (values.length === 1 && values[0] === '') continue; // skip blank line
+
+    const rowObj: Record<string, string> = {};
+    headers.forEach((header, idx) => {
+      let val = values[idx] || '';
+      val = val.replace(/^["']|["']$/g, '').trim();
+      rowObj[header] = val;
+    });
+    rows.push(rowObj);
+  }
+
+  return { headers, rows };
+}
+
+/**
+ * Triggers a browser download of a CSV file using Blob
+ */
+export function downloadCsvFile(filename: string, content: string): void {
+  if (typeof window === 'undefined') return;
+  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename.endsWith('.csv') ? filename : `${filename}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+/**
+ * Downloadable sample CSV templates for all 7 business datasets
+ */
+export const SAMPLE_CSV_TEMPLATES: Record<string, { filename: string; content: string }> = {
+  accounts: {
+    filename: 'sample_chart_of_accounts.csv',
+    content: `code,name,group,type,isControlAccount,active
+1010,Cash in Hand,Current Assets,ASSET,false,true
+1020,ICICI Bank Current A/c,Bank Accounts,ASSET,false,true
+1040,Accounts Receivable Control,Current Assets,ASSET,true,true
+2010,Accounts Payable Control,Current Liabilities,LIABILITY,true,true
+2020,Output GST Payable,Current Liabilities,LIABILITY,true,true
+2030,Input Tax Credit (ITC),Current Assets,ASSET,true,true
+4010,Consulting Revenue,Revenue,INCOME,false,true
+4020,Product Sales,Revenue,INCOME,false,true
+5010,Raw Materials Purchase,Direct Expenses,EXPENSE,false,true
+5020,Freight & Logistics,Direct Expenses,EXPENSE,false,true`
+  },
+  items: {
+    filename: 'sample_items_master.csv',
+    content: `code,description,hsnSac,unit,defaultGstRate,standardCost,sellingPrice
+ITM-001,High Density Polymer Granules,3901,KGS,18,110,135
+ITM-002,Industrial Corrugated Boxes 5-Ply,4819,NOS,12,24,35
+ITM-003,Liquid Stabilizer Resin Grade B,2915,KGS,18,185,240
+ITM-004,Senior IT & ERP Advisory Support,998314,HRS,18,2200,3500
+ITM-005,Standard Palletised Packaging Shrink,3920,MTR,18,45,65`
+  },
+  parties: {
+    filename: 'sample_parties_master.csv',
+    content: `code,legalName,tradeName,type,gstin,stateCode,creditPeriodDays,creditLimit
+CUST-001,Bluewave Services Pvt Ltd,Bluewave,CUSTOMER,06AABCB4521K1Z7,06,30,500000
+CUST-002,Zenith Retailers LLP,Zenith Stores,CUSTOMER,06AAEFZ4412P1Z9,06,45,300000
+CUST-003,Gupta Global Exports,Gupta Exports,CUSTOMER,06AABCG1290L1Z3,06,15,750000
+VEND-001,Delta Chemicals Corporation,Delta Chem,VENDOR,06AAECD1177H1Z4,06,30,1000000
+VEND-002,Raj Polymers Private Limited,Raj Poly,VENDOR,06AAACR8890M1Z2,06,30,800000
+VEND-003,Om Logistics Transport Ltd,Om Logistics,VENDOR,06AAECO4412J1Z8,06,15,250000`
+  },
+  receivables: {
+    filename: 'sample_sales_invoices.csv',
+    content: `id,customer,amount,overdueDays,docDate,gstin
+INV-1090,Bluewave Services Pvt Ltd,99120,-25,02 Nov 2026,06AABCB4521K1Z7
+INV-1091,Zenith Retailers LLP,142500,14,20 Oct 2026,06AAEFZ4412P1Z9
+INV-1092,Gupta Global Exports,318000,42,15 Sep 2026,06AABCG1290L1Z3
+INV-1093,Om Logistics Transport,28320,-10,28 Oct 2026,06AAECO4412J1Z8
+INV-1094,Nova Tech Ventures,88500,68,20 Aug 2026,06AAECN9988P1Z5`
+  },
+  payables: {
+    filename: 'sample_vendor_bills.csv',
+    content: `id,supplier,amount,dueInDays,docDate,gstin,priority
+BILL-301,Delta Chemicals Corporation,79322,12,28 Oct 2026,06AAECD1177H1Z4,high
+BILL-302,Raj Polymers Private Limited,206500,22,25 Oct 2026,06AAACR8890M1Z2,normal
+BILL-303,Apex Packaging Industries,13888,5,02 Nov 2026,06AABCA7712P1Z0,high
+BILL-304,Om Logistics Transport Ltd,25200,18,30 Oct 2026,06AAECO4412J1Z8,low
+BILL-305,CloudGrid Servers India,18400,2,04 Nov 2026,06AAECG7722M1Z1,high`
+  },
+  bank: {
+    filename: 'sample_bank_statement.csv',
+    content: `date,narration,amount,category
+01 Nov 2026,NEFT-CR-BLUEWAVE SERVICES PVT LTD,99120,Customer Receipt
+02 Nov 2026,RTGS-DR-DELTA CHEMICALS VENDOR PMT,-79322,Vendor Payment
+03 Nov 2026,UPI-CR-ZENITH RETAILERS PART-PAY,45000,Customer Receipt
+04 Nov 2026,CHQ-DR-OFFICE RENT & MAINTENANCE,-55000,Operating Expense
+04 Nov 2026,BANK CHARGES & GST TAX DEBIT,-1180,Bank Charges`
+  },
+  gstr2b: {
+    filename: 'sample_gstr2b_portal.csv',
+    content: `gstin,supplier,docNo,portalTax,status
+06AAECD1177H1Z4,Delta Chemicals Corporation,DC-910,12100,matched
+06AAACR8890M1Z2,Raj Polymers Private Limited,RP/221,31500,matched
+06AABCA7712P1Z0,Apex Packaging Industries,EXP-318,1488,matched
+06AAECT9981K1Z3,Tata Steel Tubes Ltd,TST-402,37800,portal
+06AAECO4412J1Z8,Om Logistics Transport,OL-88,1200,matched`
+  }
+};
+

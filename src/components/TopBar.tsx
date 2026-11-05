@@ -7,10 +7,12 @@ interface TopBarProps {
   tabTitle: string;
   currentRole: UserRole;
   currentUser?: User;
+  companyName?: string;
   onSelectRole: (role: UserRole) => void;
   onLogout?: () => void;
   onOpenMobileMenu: () => void;
   onOpenAddBill: () => void;
+  onOpenAddInvoice?: () => void;
   onOpenAi: () => void;
 }
 
@@ -19,10 +21,12 @@ export const TopBar: React.FC<TopBarProps> = ({
   tabTitle,
   currentRole,
   currentUser,
+  companyName = 'CEO ITBox Pvt Ltd',
   onSelectRole,
   onLogout,
   onOpenMobileMenu,
   onOpenAddBill,
+  onOpenAddInvoice,
   onOpenAi
 }) => {
   const roleBadges: Record<UserRole, { label: string; cls: string }> = {
@@ -51,7 +55,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             {tabTitle}
           </span>
           <span className="hidden sm:inline-block text-xs text-slate-400 font-mono">
-            / Sample Traders Pvt Ltd
+            / {companyName}
           </span>
         </div>
       </div>
@@ -60,7 +64,7 @@ export const TopBar: React.FC<TopBarProps> = ({
       <div className="hidden lg:flex items-center gap-4 text-xs text-slate-500 font-mono">
         <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-md">
           <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse" />
-          <span className="text-[11px] text-slate-700 font-medium">Node.js PG Concurrency Active</span>
+          <span className="text-[11px] text-slate-700 font-medium">Node.js PG Concurrency Active • Live Mode</span>
         </div>
       </div>
 
@@ -75,14 +79,26 @@ export const TopBar: React.FC<TopBarProps> = ({
           <span>Ask AI</span>
         </button>
 
+        {/* Quick Add Invoice (for owner and collections) */}
+        {onOpenAddInvoice && (currentRole === 'owner' || currentRole === 'col' || currentRole === 'fin') && (
+          <button
+            onClick={onOpenAddInvoice}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-semibold text-teal-700 bg-teal-50 border border-teal-200 hover:bg-teal-100 transition-colors whitespace-nowrap shadow-xs"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">+ Invoice</span>
+            <span className="sm:hidden">Inv</span>
+          </button>
+        )}
+
         {/* Quick Add Bill (for owner and finance) */}
         {(currentRole === 'owner' || currentRole === 'fin') && (
           <button
             onClick={onOpenAddBill}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 transition-colors whitespace-nowrap shadow-xs"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 transition-colors whitespace-nowrap shadow-xs"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Add Bill</span>
+            <span className="hidden sm:inline">+ Bill</span>
             <span className="sm:hidden">Bill</span>
           </button>
         )}
@@ -91,10 +107,10 @@ export const TopBar: React.FC<TopBarProps> = ({
         <div className="flex items-center gap-1.5 pl-2 border-l border-slate-200">
           <div className="hidden sm:flex flex-col text-right">
             <span className="text-xs font-bold text-slate-800 leading-tight">
-              {currentUser?.name || 'Anita Rao'}
+              {currentUser?.name || 'Devendra (CEO ITBox)'}
             </span>
             <span className="text-[10px] text-slate-400 font-mono">
-              {currentUser?.email || 'owner@sampletraders.in'}
+              {currentUser?.email || 'devendra@ceoitbox.in'}
             </span>
           </div>
 

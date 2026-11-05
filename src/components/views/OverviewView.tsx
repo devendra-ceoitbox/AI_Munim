@@ -22,9 +22,16 @@ import { formatINR, getEligibleItc, calculateCashForecast } from '../../utils/ac
 interface OverviewViewProps {
   state: AppState;
   onNavigateTab: (tab: string) => void;
+  onOpenAddBill?: () => void;
+  onOpenAddInvoice?: () => void;
 }
 
-export const OverviewView: React.FC<OverviewViewProps> = ({ state, onNavigateTab }) => {
+export const OverviewView: React.FC<OverviewViewProps> = ({
+  state,
+  onNavigateTab,
+  onOpenAddBill,
+  onOpenAddInvoice
+}) => {
   const eligibleItc = getEligibleItc(state.gstRows);
   const netGst = Math.max(0, state.salesTaxOutput - eligibleItc);
 
@@ -57,6 +64,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({ state, onNavigateTab
 
   const gstMismatchCount = state.gstRows.filter(r => ['mismatch', 'books', 'portal'].includes(r.status)).length;
   const unreconciledBankCount = state.bankLines.filter(b => b.status === 'pending').length;
+  const isPristineLiveState = state.receivables.length === 0 && state.payables.length === 0 && state.bankLines.length === 0;
 
   // Workflow steps corresponding to user attachment infographic
   const workflowSteps = [
@@ -106,6 +114,54 @@ export const OverviewView: React.FC<OverviewViewProps> = ({ state, onNavigateTab
 
   return (
     <div className="space-y-6">
+      {/* Pristine Live Mode Welcome Banner */}
+      {isPristineLiveState && (
+        <div className="bg-gradient-to-r from-teal-900 to-slate-900 border border-teal-700/60 rounded-xl p-5 text-white shadow-md">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
+                <span className="text-[11px] font-mono uppercase tracking-wider text-teal-300 font-bold">
+                  Live Production Mode Active • Zero Hardcoded Data
+                </span>
+              </div>
+              <h2 className="text-base sm:text-lg font-bold tracking-tight">
+                Welcome to {state.company.legalName || 'CEO ITBox Private Limited'}
+              </h2>
+              <p className="text-xs text-slate-300 max-w-2xl mt-0.5 leading-relaxed">
+                Your statutory Indian Chart of Accounts (COA) and GST tax slabs are fully provisioned. The transactional ledgers are clean and ready to record real business activity.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              {onOpenAddInvoice && (
+                <button
+                  onClick={onOpenAddInvoice}
+                  className="px-3 py-1.5 bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs rounded-lg transition-colors shadow-sm flex items-center gap-1.5"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>+ Real Invoice</span>
+                </button>
+              )}
+              {onOpenAddBill && (
+                <button
+                  onClick={onOpenAddBill}
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-semibold text-xs rounded-lg transition-colors flex items-center gap-1.5"
+                >
+                  <span>+ Supplier Bill</span>
+                </button>
+              )}
+              <button
+                onClick={() => onNavigateTab('bulk-csv')}
+                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-teal-200 font-semibold text-xs rounded-lg transition-colors"
+              >
+                Bulk CSV Import
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 6 Core Financial Metric Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
         {/* Book Cash */}
@@ -145,7 +201,7 @@ export const OverviewView: React.FC<OverviewViewProps> = ({ state, onNavigateTab
             <ArrowUpRight className="w-3.5 h-3.5 text-amber-600" />
           </div>
           <div className="font-mono text-lg font-bold text-amber-800">{formatINR(payablesDue7)}</div>
-          <span className="text-[11px] text-amber-700">Committed supplier bills</span>
+          <span className="text-[11px] text-amber-700">{state.payables.length} open obligations</span>
         </div>
 
         {/* Estimated Net GST */}
@@ -236,6 +292,16 @@ export const OverviewView: React.FC<OverviewViewProps> = ({ state, onNavigateTab
           </div>
 
           <div className="space-y-2.5">
+            {isPristineLiveState && (
+              <div className="p-4 rounded-lg border border-teal-200 bg-teal-50/40 text-center">
+                <CheckCircle2 className="w-6 h-6 text-teal-600 mx-auto mb-1.5" />
+                <h4 className="text-xs font-bold text-teal-950">No Overdue Debts or Mismatches</h4>
+                <p className="text-[11px] text-teal-800 mt-0.5">
+                  Your business books are in pristine condition. Ready to record customer receivables and supplier payables.
+                </p>
+              </div>
+            )}
+
             {cautiousForecast.lowestCash < 0 && (
               <div className="p-3 rounded-lg border border-rose-200 bg-rose-50/40 flex items-start justify-between gap-3">
                 <div className="flex items-start gap-2.5">
@@ -348,10 +414,10 @@ export const OverviewView: React.FC<OverviewViewProps> = ({ state, onNavigateTab
           <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
             <span>Every posted transaction creates balanced journal entries.</span>
             <button
-              onClick={() => onNavigateTab('db')}
+              onClick={() => onNavigateTab('settings')}
               className="text-teal-700 font-semibold hover:underline flex items-center gap-1"
             >
-              <span>View Postgres Architecture</span>
+              <span>View Masters &amp; Settings</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>

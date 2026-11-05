@@ -13,7 +13,9 @@ import {
   ChevronRight,
   Sparkles,
   LogOut,
-  UserCheck
+  UserCheck,
+  BarChart3,
+  UploadCloud
 } from 'lucide-react';
 import { UserRole } from '../types/accounting.ts';
 
@@ -50,7 +52,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   // Navigation visibility based on role (Note: 'db' moved to Settings tab per user request)
   const navItems = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard, roles: ['owner', 'fin', 'col', 'app'] },
+    { id: 'reports', label: 'Visual Reports', icon: BarChart3, roles: ['owner', 'fin', 'col', 'app'] },
     { id: 'capture', label: 'Capture & Approve (OCR)', icon: FileScan, roles: ['owner', 'fin', 'app'], badge: badgeCounts.pendingBills },
+    { id: 'bulk-csv', label: 'Bulk CSV Upload', icon: UploadCloud, roles: ['owner', 'fin', 'app'] },
     { id: 'payables', label: 'Payables & Bills', icon: Receipt, roles: ['owner', 'fin', 'app'] },
     { id: 'collections', label: 'Collections Autopilot', icon: Users, roles: ['owner', 'fin', 'col', 'client'], badge: badgeCounts.overdueInvoices },
     { id: 'gst', label: 'GST Workspace', icon: FileSpreadsheet, roles: ['owner', 'fin', 'app'], badge: badgeCounts.gstExceptions },

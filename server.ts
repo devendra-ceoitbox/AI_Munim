@@ -508,6 +508,81 @@ app.post('/api/masters/party/toggle', (req: Request, res: Response) => {
   res.json({ success: true });
 });
 
+// Bulk CSV Dataset Import Endpoint
+app.post('/api/import/csv', (req: Request, res: Response) => {
+  const { dataset, rows } = req.body;
+  if (!dataset || !rows || !Array.isArray(rows)) {
+    return res.status(400).json({ error: 'dataset name and rows array required' });
+  }
+  const result = accountingEngine.importCsvDataset(dataset, rows);
+  broadcastStateUpdate();
+  res.json({ success: true, count: result.count, dataset: result.dataset });
+});
+
+// Fast-track Approver Sign-off override
+app.post('/api/documents/quick-approve', (req: Request, res: Response) => {
+  const { approverName } = req.body;
+  const success = accountingEngine.quickApproveAndPost(approverName);
+  if (success) {
+    broadcastStateUpdate();
+    res.json({ success: true });
+  } else {
+    res.status(400).json({ error: 'No active draft to approve' });
+  }
+});
+
+// Update draft field dynamically
+app.post('/api/documents/update-field', (req: Request, res: Response) => {
+  const { field, value } = req.body;
+  const success = accountingEngine.updateDraftField(field, value);
+  if (success) {
+    broadcastStateUpdate();
+    res.json({ success: true });
+  } else {
+    res.status(400).json({ error: 'No active draft' });
+  }
+});
+
+// Live Sales Invoices
+app.post('/api/invoices', (req: Request, res: Response) => {
+  const result = accountingEngine.addSalesInvoice(req.body);
+  if (result.success) {
+    broadcastStateUpdate();
+    res.json(result);
+  } else {
+    res.status(400).json(result);
+  }
+});
+
+// Live Bank Transaction Lines
+app.post('/api/bank/lines', (req: Request, res: Response) => {
+  const result = accountingEngine.addBankTransactionLine(req.body);
+  if (result.success) {
+    broadcastStateUpdate();
+    res.json(result);
+  } else {
+    res.status(400).json(result);
+  }
+});
+
+// Live GSTR-2B Records
+app.post('/api/gst/rows', (req: Request, res: Response) => {
+  const result = accountingEngine.addGstRecord(req.body);
+  if (result.success) {
+    broadcastStateUpdate();
+    res.json(result);
+  } else {
+    res.status(400).json(result);
+  }
+});
+
+// Live State Fresh Reset
+app.post('/api/state/reset', (req: Request, res: Response) => {
+  accountingEngine.resetToLiveEmptyState();
+  broadcastStateUpdate();
+  res.json({ success: true, message: 'All transactional registers reset to clean zero-state' });
+});
+
 // --- VITE MIDDLEWARE / STATIC ASSETS ---
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {

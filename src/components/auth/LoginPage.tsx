@@ -21,8 +21,8 @@ interface LoginPageProps {
 }
 
 export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, availableUsers }) => {
-  const [selectedEmail, setSelectedEmail] = useState('owner@sampletraders.in');
-  const [password, setPassword] = useState('demo123');
+  const [selectedEmail, setSelectedEmail] = useState('devendra@ceoitbox.in');
+  const [password, setPassword] = useState('live2026');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -74,7 +74,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, availableU
 
   const handleQuickLogin = (user: User) => {
     setSelectedEmail(user.email);
-    setPassword(user.password || 'demo123');
+    setPassword(user.password || 'live2026');
     setError('');
 
     const meta = roleMeta[user.role] || roleMeta.owner;
@@ -88,9 +88,26 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, availableU
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    const user = availableUsers.find(u => u.email.toLowerCase() === selectedEmail.toLowerCase().trim());
+    const trimmedEmail = selectedEmail.toLowerCase().trim();
+    let user = availableUsers.find(u => u.email.toLowerCase() === trimmedEmail);
+
+    // If live corporate email entered that's not in the seeded list, create on-the-fly live owner session
+    if (!user && trimmedEmail.includes('@')) {
+      const namePart = trimmedEmail.split('@')[0];
+      const displayName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+      user = {
+        id: `usr_${Date.now()}`,
+        name: `${displayName} (Live Admin)`,
+        email: trimmedEmail,
+        role: 'owner',
+        department: 'Executive Finance',
+        active: true,
+        password: password || 'live2026'
+      };
+    }
+
     if (!user) {
-      setError('Invalid account email. Please choose one of the configured demo personas.');
+      setError('Please enter a valid email address to access your live workspace.');
       return;
     }
     if (!user.active) {
@@ -208,13 +225,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, availableU
           <form onSubmit={handleFormSubmit} className="space-y-4">
             <div>
               <label className="text-xs font-semibold text-slate-300 block mb-1">
-                Authorized User Email / Dummy ID
+                Authorized User Email / Live User ID
               </label>
               <input
                 type="email"
                 value={selectedEmail}
                 onChange={e => setSelectedEmail(e.target.value)}
-                placeholder="e.g. owner@sampletraders.in"
+                placeholder="e.g. devendra@ceoitbox.in"
                 className="w-full text-xs px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono focus:outline-none focus:ring-1 focus:ring-teal-500"
                 required
               />
@@ -232,7 +249,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, availableU
                 className="w-full text-xs px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-lg text-white font-mono focus:outline-none focus:ring-1 focus:ring-teal-500"
                 required
               />
-              <span className="text-[10px] text-slate-500 block mt-1">Default demo password: <code className="text-teal-400 font-mono">demo123</code></span>
+              <span className="text-[10px] text-slate-500 block mt-1">Live Mode: Sign in with registered credentials or use your <code className="text-teal-400 font-mono">@ceoitbox.in</code> account.</span>
             </div>
 
             <button

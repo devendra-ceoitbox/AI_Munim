@@ -166,27 +166,52 @@ export const PayablesView: React.FC<PayablesViewProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-sans">
-              {state.payables.map(bill => (
-                <tr key={bill.id} className="hover:bg-slate-50">
-                  <td className="py-3 px-4 font-semibold text-slate-800">{bill.supplier}</td>
-                  <td className="py-3 px-4 font-mono text-slate-700">{bill.id}</td>
-                  <td className="py-3 px-4 font-mono text-slate-500">{bill.gstin || '–'}</td>
-                  <td className="py-3 px-4 text-right font-mono font-bold text-slate-900">
-                    {formatINR(bill.amount)}
-                  </td>
-                  <td className="py-3 px-4 text-right font-mono">
-                    <span
-                      className={`inline-block px-2 py-0.5 rounded text-[11px] font-semibold ${
-                        bill.dueInDays <= 7
-                          ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                          : 'bg-slate-100 text-slate-700'
-                      }`}
-                    >
-                      Due in +{bill.dueInDays} days
-                    </span>
+              {state.payables.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-10 text-center text-slate-500">
+                    <div className="flex flex-col items-center justify-center max-w-sm mx-auto">
+                      <Receipt className="w-8 h-8 text-teal-600 mb-2 opacity-60" />
+                      <p className="font-semibold text-slate-800 text-xs mb-0.5">
+                        Live Payables Subledger Empty
+                      </p>
+                      <p className="text-[11px] text-slate-500 mb-3">
+                        No outstanding supplier obligations in the system yet.
+                      </p>
+                      {canSubmit && (
+                        <button
+                          onClick={onOpenAddBill}
+                          className="px-3.5 py-1.5 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-md shadow-xs flex items-center gap-1.5"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>+ Record Supplier Bill</span>
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                state.payables.map(bill => (
+                  <tr key={bill.id} className="hover:bg-slate-50">
+                    <td className="py-3 px-4 font-semibold text-slate-800">{bill.supplier}</td>
+                    <td className="py-3 px-4 font-mono text-slate-700">{bill.id}</td>
+                    <td className="py-3 px-4 font-mono text-slate-500">{bill.gstin || '–'}</td>
+                    <td className="py-3 px-4 text-right font-mono font-bold text-slate-900">
+                      {formatINR(bill.amount)}
+                    </td>
+                    <td className="py-3 px-4 text-right font-mono">
+                      <span
+                        className={`inline-block px-2 py-0.5 rounded text-[11px] font-semibold ${
+                          bill.dueInDays <= 7
+                            ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                            : 'bg-slate-100 text-slate-700'
+                        }`}
+                      >
+                        Due in +{bill.dueInDays} days
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

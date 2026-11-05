@@ -37,6 +37,7 @@ export interface AppState {
   pendingBills: DocumentDraft[];
   currentDraft: DocumentDraft | null;
   activeBatch: BulkUploadBatch | null;
+  postedDocuments: DocumentDraft[];
   auditLogs: AuditLogItem[];
   metrics: HighConcurrencyMetric;
   masters: MastersState;
@@ -48,51 +49,76 @@ export class HighConcurrencyAccountingEngine {
 
   constructor() {
     this.state = this.getInitialState();
+    this.loadFromStorage();
+  }
+
+  private loadFromStorage(): void {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        const saved = window.localStorage.getItem('ai_munim_live_state');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.company && parsed.users) {
+            this.state = { ...this.state, ...parsed };
+          }
+        }
+      } catch (e) {
+        console.warn('Could not restore live state from storage:', e);
+      }
+    }
+  }
+
+  public saveToStorage(): void {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        window.localStorage.setItem('ai_munim_live_state', JSON.stringify(this.state));
+      } catch (e) {}
+    }
   }
 
   private getInitialState(): AppState {
     const initialUsers: User[] = [
       {
         id: 'u1',
-        name: 'Anita Rao',
-        email: 'owner@sampletraders.in',
-        password: 'demo123',
+        name: 'Devendra (CEO ITBox)',
+        email: 'devendra@ceoitbox.in',
+        password: 'password123',
         role: 'owner',
         active: true,
-        department: 'Executive Management'
+        department: 'Corporate Executive'
       },
       {
         id: 'u2',
-        name: 'Vikram Sethi',
-        email: 'finance@sampletraders.in',
-        password: 'demo123',
+        name: 'Finance Executive',
+        email: 'finance@ceoitbox.in',
+        password: 'password123',
         role: 'fin',
         active: true,
-        department: 'Finance & Accounts'
+        department: 'Finance & Statutory Operations'
       },
       {
         id: 'u3',
-        name: 'Neha Kapoor',
-        email: 'collections@sampletraders.in',
-        password: 'demo123',
+        name: 'Collections Specialist',
+        email: 'collections@ceoitbox.in',
+        password: 'password123',
         role: 'col',
         active: true,
         department: 'Credit & Receivables'
       },
       {
         id: 'u4',
-        name: 'Rohit Jain',
-        email: 'approver@sampletraders.in',
-        password: 'demo123',
+        name: 'Statutory Approver',
+        email: 'approver@ceoitbox.in',
+        password: 'password123',
         role: 'app',
         active: true,
         department: 'Internal Audit & Approvals'
       },
       {
         id: 'u5',
-        name: 'Amit Gupta (Gupta Exports)',
-        email: 'client@guptaexports.in',
-        password: 'demo123',
+        name: 'Client Accounts Portal',
+        email: 'client@ceoitbox.in',
+        password: 'password123',
         role: 'client',
         active: true,
         department: 'Customer Accounts'
@@ -109,21 +135,15 @@ export class HighConcurrencyAccountingEngine {
         { id: 'acc-6', code: '2020', name: 'Output GST Payable', group: 'Current Liabilities', type: 'LIABILITY', isControlAccount: true, active: true },
         { id: 'acc-7', code: '2030', name: 'Input Tax Credit (ITC)', group: 'Current Assets', type: 'ASSET', isControlAccount: true, active: true },
         { id: 'acc-8', code: '3010', name: 'Equity Share Capital', group: 'Equity', type: 'EQUITY', isControlAccount: false, active: true },
-        { id: 'acc-9', code: '4010', name: 'Consulting Revenue', group: 'Revenue', type: 'INCOME', isControlAccount: false, active: true },
+        { id: 'acc-9', code: '4010', name: 'Consulting & Technology Revenue', group: 'Revenue', type: 'INCOME', isControlAccount: false, active: true },
         { id: 'acc-10', code: '4020', name: 'Product Sales', group: 'Revenue', type: 'INCOME', isControlAccount: false, active: true },
-        { id: 'acc-11', code: '5010', name: 'Raw Materials Purchase', group: 'Direct Expenses', type: 'EXPENSE', isControlAccount: false, active: true },
+        { id: 'acc-11', code: '5010', name: 'Raw Materials / Direct Purchases', group: 'Direct Expenses', type: 'EXPENSE', isControlAccount: false, active: true },
         { id: 'acc-12', code: '5020', name: 'Freight & Logistics', group: 'Direct Expenses', type: 'EXPENSE', isControlAccount: false, active: true },
-        { id: 'acc-13', code: '5030', name: 'Office Expenses', group: 'Indirect Expenses', type: 'EXPENSE', isControlAccount: false, active: true },
+        { id: 'acc-13', code: '5030', name: 'Office & Administrative Expenses', group: 'Indirect Expenses', type: 'EXPENSE', isControlAccount: false, active: true },
         { id: 'acc-14', code: '5040', name: 'IT & Software Subscriptions', group: 'Indirect Expenses', type: 'EXPENSE', isControlAccount: false, active: true },
-        { id: 'acc-15', code: '5050', name: 'Bank Charges', group: 'Indirect Expenses', type: 'EXPENSE', isControlAccount: false, active: true }
+        { id: 'acc-15', code: '5050', name: 'Bank Charges & Commission', group: 'Indirect Expenses', type: 'EXPENSE', isControlAccount: false, active: true }
       ],
-      items: [
-        { id: 'itm-1', code: 'ITM-001', description: 'Linear Alkyl Benzene (LAB)', hsnSac: '2915', unit: 'KGS', defaultTaxRate: 18, defaultLedger: 'Raw Materials Purchase', active: true },
-        { id: 'itm-2', code: 'ITM-002', description: 'High Density Polyethylene (HDPE)', hsnSac: '3901', unit: 'KGS', defaultTaxRate: 18, defaultLedger: 'Raw Materials Purchase', active: true },
-        { id: 'itm-3', code: 'ITM-003', description: 'Corrugated Master Shipping Cartons', hsnSac: '4819', unit: 'BOX', defaultTaxRate: 12, defaultLedger: 'Office Expenses', active: true },
-        { id: 'itm-4', code: 'ITM-004', description: 'ERP Accounting & Financial Architecture Services', hsnSac: '998314', unit: 'HRS', defaultTaxRate: 18, defaultLedger: 'Consulting Revenue', active: true },
-        { id: 'itm-5', code: 'ITM-005', description: 'Inter-State Freight & Transit Logistic Services', hsnSac: '996511', unit: 'NOS', defaultTaxRate: 5, defaultLedger: 'Freight & Logistics', active: true }
-      ],
+      items: [],
       taxCodes: [
         { id: 'tax-1', name: 'GST 18% (Standard Rate)', rate: 18, cgstRate: 9, sgstRate: 9, igstRate: 18, cessRate: 0, effectiveFrom: '2017-07-01', active: true },
         { id: 'tax-2', name: 'GST 12% (Intermediate Goods)', rate: 12, cgstRate: 6, sgstRate: 6, igstRate: 12, cessRate: 0, effectiveFrom: '2017-07-01', active: true },
@@ -131,133 +151,47 @@ export class HighConcurrencyAccountingEngine {
         { id: 'tax-4', name: 'GST 28% (Luxury/Demerit Goods)', rate: 28, cgstRate: 14, sgstRate: 14, igstRate: 28, cessRate: 0, effectiveFrom: '2017-07-01', active: true },
         { id: 'tax-5', name: 'Exempt 0% (Zero-Rated / Export)', rate: 0, cgstRate: 0, sgstRate: 0, igstRate: 0, cessRate: 0, effectiveFrom: '2017-07-01', active: true }
       ],
-      costCentres: [
-        { id: 'cc-1', code: 'CC-HQ', name: 'Corporate Headquarters', branch: 'Gurugram Central', manager: 'Anita Rao', active: true },
-        { id: 'cc-2', code: 'CC-PL1', name: 'Manesar Polymer Plant 1', branch: 'Haryana Industrial Area', manager: 'Vikram Sethi', active: true },
-        { id: 'cc-3', code: 'CC-WH', name: 'Bhiwandi Central Logistics Hub', branch: 'Mumbai Distribution Center', manager: 'Rohit Jain', active: true },
-        { id: 'cc-4', code: 'CC-FIN', name: 'Finance & Statutory Operations', branch: 'Gurugram Central', manager: 'Vikram Sethi', active: true }
-      ],
-      bankAccounts: [
-        { id: 'ba-1', bankName: 'ICICI Bank Current A/c', accountNumberMasked: 'XXXX-XXXX-9821', ifsc: 'ICIC0000102', accountType: 'Current', openingBalance: 180000, active: true },
-        { id: 'ba-2', bankName: 'HDFC Bank OD Facility', accountNumberMasked: 'XXXX-XXXX-4412', ifsc: 'HDFC0001890', accountType: 'Overdraft (OD)', openingBalance: 120000, active: true },
-        { id: 'ba-3', bankName: 'State Bank of India', accountNumberMasked: 'XXXX-XXXX-1102', ifsc: 'SBIN0004521', accountType: 'Current', openingBalance: 45000, active: true }
-      ],
+      costCentres: [],
+      bankAccounts: [],
       docSeries: [
-        { id: 'ds-1', docType: 'Sales Invoice', prefix: 'INV-', startingNumber: 1001, currentNumber: 1058, fySuffix: '/26-27', active: true },
-        { id: 'ds-2', docType: 'Purchase Invoice', prefix: 'PB-', startingNumber: 201, currentNumber: 224, fySuffix: '/26-27', active: true },
-        { id: 'ds-3', docType: 'Credit Note', prefix: 'CN-', startingNumber: 1, currentNumber: 4, fySuffix: '/26-27', active: true },
-        { id: 'ds-4', docType: 'Debit Note', prefix: 'DN-', startingNumber: 1, currentNumber: 2, fySuffix: '/26-27', active: true },
-        { id: 'ds-5', docType: 'Expense Voucher', prefix: 'EXP-', startingNumber: 301, currentNumber: 318, fySuffix: '/26-27', active: true },
-        { id: 'ds-6', docType: 'Bank Statement', prefix: 'BST-', startingNumber: 101, currentNumber: 112, fySuffix: '/26-27', active: true }
+        { id: 'ds-1', docType: 'Sales Invoice', prefix: 'INV-', startingNumber: 1, currentNumber: 1, fySuffix: '/26-27', active: true },
+        { id: 'ds-2', docType: 'Purchase Invoice', prefix: 'PB-', startingNumber: 1, currentNumber: 1, fySuffix: '/26-27', active: true },
+        { id: 'ds-3', docType: 'Credit Note', prefix: 'CN-', startingNumber: 1, currentNumber: 1, fySuffix: '/26-27', active: true },
+        { id: 'ds-4', docType: 'Debit Note', prefix: 'DN-', startingNumber: 1, currentNumber: 1, fySuffix: '/26-27', active: true },
+        { id: 'ds-5', docType: 'Expense Voucher', prefix: 'EXP-', startingNumber: 1, currentNumber: 1, fySuffix: '/26-27', active: true },
+        { id: 'ds-6', docType: 'Bank Statement', prefix: 'BST-', startingNumber: 1, currentNumber: 1, fySuffix: '/26-27', active: true }
       ],
-      parties: [
-        { id: 'pty-1', partyType: 'CUSTOMER', name: 'Sharma Traders', legalName: 'Sharma Traders Private Limited', gstin: '06AAACS8890K1Z1', stateCode: '06', phone: '+91 98110 22345', creditDays: 30, creditLimit: 500000, active: true },
-        { id: 'pty-2', partyType: 'CUSTOMER', name: 'Gupta Exports', legalName: 'Gupta Exports LLP', gstin: '06AABCG1290L1Z3', stateCode: '06', phone: '+91 98712 34567', creditDays: 30, creditLimit: 800000, active: true },
-        { id: 'pty-3', partyType: 'CUSTOMER', name: 'Kapoor Steels', legalName: 'Kapoor Steels Corporation', gstin: '06AABCK9921M1Z4', stateCode: '06', phone: '+91 98101 99882', creditDays: 30, creditLimit: 1000000, active: true },
-        { id: 'pty-4', partyType: 'CUSTOMER', name: 'Bluewave Services', legalName: 'Bluewave Consulting Services Ltd', gstin: '06AABCB4521K1Z7', stateCode: '06', phone: '+91 99580 44321', creditDays: 30, creditLimit: 300000, active: true },
-        { id: 'pty-5', partyType: 'CUSTOMER', name: 'Mehta & Sons', legalName: 'Mehta & Sons Trading Co', gstin: '06AABCM3312N1Z9', stateCode: '06', phone: '+91 98115 67890', creditDays: 30, creditLimit: 400000, active: true },
-        { id: 'pty-6', partyType: 'SUPPLIER', name: 'Raj Polymers', legalName: 'Raj Polymers India Ltd', gstin: '06AAACR8890M1Z2', stateCode: '06', phone: '+91 98200 11223', creditDays: 30, creditLimit: 0, active: true },
-        { id: 'pty-7', partyType: 'SUPPLIER', name: 'Om Logistics', legalName: 'Om Freight & Logistics Ltd', gstin: '06AAECO4412J1Z8', stateCode: '06', phone: '+91 98330 44556', creditDays: 15, creditLimit: 0, active: true },
-        { id: 'pty-8', partyType: 'SUPPLIER', name: 'Apex Packaging', legalName: 'Apex Packaging Industries', gstin: '06AABCA7712P1Z0', stateCode: '06', phone: '+91 98111 88990', creditDays: 30, creditLimit: 0, active: true },
-        { id: 'pty-9', partyType: 'SUPPLIER', name: 'Delta Chemicals', legalName: 'Delta Chemicals Mfg Co', gstin: '06AAECD1177H1Z4', stateCode: '06', phone: '+91 98104 55667', creditDays: 30, creditLimit: 0, active: true }
-      ]
+      parties: []
     };
 
     return {
       company: {
-        legalName: 'Sample Traders Pvt Ltd',
-        gstin: '06AABCS1234F1Z5',
+        legalName: 'CEO ITBox Private Limited',
+        gstin: '07AABCC1234F1Z8',
         financialYear: 'Apr 2026 – Mar 2027',
-        industryProfile: 'Trading',
-        approverLimit: 100000,
+        industryProfile: 'Services',
+        approverLimit: 250000,
         baseCurrency: 'INR'
       },
       users: initialUsers,
       currentRole: 'owner',
       currentUser: initialUsers[0],
       isAuthenticated: true,
-      cashBalance: 300000,
-      salesTaxOutput: 112500,
-      receivables: [
-        { id: 'INV-1042', customer: 'Sharma Traders', amount: 118000, overdueDays: 15, promiseDays: 3, gstin: '06AAACS8890K1Z1' },
-        { id: 'INV-1051', customer: 'Gupta Exports', amount: 182000, overdueDays: 8, promiseDays: 5, gstin: '06AABCG1290L1Z3' },
-        { id: 'INV-0988', customer: 'Kapoor Steels', amount: 245000, overdueDays: 42, promiseDays: null, gstin: '06AABCK9921M1Z4' },
-        { id: 'INV-1055', customer: 'Bluewave Services', amount: 64500, overdueDays: -6, promiseDays: null, gstin: '06AABCB4521K1Z7' },
-        { id: 'INV-0901', customer: 'Mehta & Sons', amount: 96000, overdueDays: 71, promiseDays: null, isDisputed: true, gstin: '06AABCM3312N1Z9' }
-      ],
-      payables: [
-        { id: 'RP/221', supplier: 'Raj Polymers', amount: 206500, dueInDays: 4, gstin: '06AAACR8890M1Z2' },
-        { id: 'OL-77', supplier: 'Om Logistics', amount: 38000, dueInDays: 7, gstin: '06AAECO4412J1Z8' },
-        { id: 'AP-413', supplier: 'Apex Packaging', amount: 155000, dueInDays: 11, gstin: '06AABCA7712P1Z0' }
-      ],
-      gstRows: [
-        { id: 'gst-1', supplier: 'Gupta Polymers', docNo: 'GP-88', booksTax: 18000, portalTax: 18000, status: 'matched' },
-        { id: 'gst-2', supplier: 'Raj Polymers', docNo: 'RP/221', booksTax: 31500, portalTax: 31500, status: 'matched' },
-        { id: 'gst-3', supplier: 'Apex Packaging', docNo: 'AP-413', booksTax: 27900, portalTax: 27000, status: 'mismatch' },
-        { id: 'gst-4', supplier: 'Om Logistics', docNo: 'OL-77', booksTax: 6840, portalTax: null, status: 'books' },
-        { id: 'gst-5', supplier: 'Delta Chemicals', docNo: 'DC-910', booksTax: null, portalTax: 12100, status: 'portal' }
-      ],
-      bankLines: [
-        {
-          id: 1,
-          narration: 'NEFT – Sharma Traders',
-          amount: 118000,
-          suggestion: 'Match to INV-1042 (exact amount, name match)',
-          confidence: 96,
-          matchedDocId: 'INV-1042',
-          status: 'pending'
-        },
-        {
-          id: 2,
-          narration: 'NEFT – Gupta Exports',
-          amount: 100000,
-          suggestion: 'Partial allocation to INV-1051 (₹82,000 remains open)',
-          confidence: 78,
-          matchedDocId: 'INV-1051',
-          status: 'pending'
-        },
-        {
-          id: 3,
-          narration: 'RTGS – Om Logistics',
-          amount: -38000,
-          suggestion: 'Match to supplier bill OL-77',
-          confidence: 94,
-          matchedDocId: 'OL-77',
-          status: 'pending'
-        },
-        {
-          id: 4,
-          narration: 'Bank charges & GST debit',
-          amount: -590,
-          suggestion: 'Classify as Bank Charges and post to ledger',
-          confidence: 90,
-          status: 'pending'
-        },
-        {
-          id: 5,
-          narration: 'UPI – unknown payer ref #8921',
-          amount: 12500,
-          suggestion: 'No match found in books. Requires review',
-          confidence: 0,
-          status: 'exception'
-        }
-      ],
+      cashBalance: 0,
+      salesTaxOutput: 0,
+      receivables: [],
+      payables: [],
+      gstRows: [],
+      bankLines: [],
       pendingBills: [],
       currentDraft: null,
       activeBatch: null,
       auditLogs: [
         {
           id: 'log-1',
-          timestamp: new Date(Date.now() - 3600000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-          user: 'System',
-          action: 'System initialized with PostgreSQL high-concurrency schema & dropdown masters',
-          category: 'system'
-        },
-        {
-          id: 'log-2',
-          timestamp: new Date(Date.now() - 1800000).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-          user: 'Anita Rao (Owner)',
-          action: 'Configured Chart of Accounts, Items, Tax Codes, and Document Series masters',
+          timestamp: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+          user: 'Devendra (Owner)',
+          action: 'Live production accounting ledger initialized for CEO ITBox Private Limited',
           category: 'system'
         }
       ],
@@ -270,6 +204,7 @@ export class HighConcurrencyAccountingEngine {
         idempotentDeduplications: 0,
         optimisticRetryCount: 0
       },
+      postedDocuments: [],
       masters: initialMasters
     };
   }
@@ -351,6 +286,23 @@ export class HighConcurrencyAccountingEngine {
     return true;
   }
 
+  public updateDraftField(field: keyof DocumentDraft, value: any): boolean {
+    if (!this.state.currentDraft) return false;
+    (this.state.currentDraft as any)[field] = value;
+    if (field === 'ledger') {
+      this.state.currentDraft.userEditedLedger = true;
+    }
+    return true;
+  }
+
+  public quickApproveAndPost(approverName?: string): boolean {
+    if (!this.state.currentDraft) return false;
+    this.state.currentDraft.status = 'Approved';
+    const actor = approverName || 'Authorized Sign-off (Fast-Track Override)';
+    this.logAction(actor, `Fast-track approved document ${this.state.currentDraft.docNo} (${this.state.currentDraft.party})`, 'approval');
+    return this.postDraft();
+  }
+
   public postDraft(): boolean {
     const draft = this.state.currentDraft;
     if (!draft) return false;
@@ -361,6 +313,12 @@ export class HighConcurrencyAccountingEngine {
 
     draft.journalVoucher = generateBalancedJournal(draft);
     draft.status = 'Posted';
+
+    // Store in recent posted documents history log
+    this.state.postedDocuments.unshift({ ...draft });
+    if (this.state.postedDocuments.length > 50) {
+      this.state.postedDocuments.pop();
+    }
 
     if (isSale) {
       this.state.receivables.push({
@@ -488,6 +446,12 @@ export class HighConcurrencyAccountingEngine {
       totalAmount += total;
       postedCount++;
 
+      item.journalVoucher = generateBalancedJournal(item);
+      item.status = 'Posted';
+
+      // Record in posted documents history log
+      this.state.postedDocuments.unshift({ ...item });
+
       if (item.type.toLowerCase().includes('sales')) {
         this.state.receivables.push({
           id: item.docNo,
@@ -517,6 +481,10 @@ export class HighConcurrencyAccountingEngine {
       }
     });
 
+    if (this.state.postedDocuments.length > 80) {
+      this.state.postedDocuments = this.state.postedDocuments.slice(0, 80);
+    }
+
     batch.status = 'posted';
     this.logAction(
       this.getRoleName(),
@@ -529,6 +497,170 @@ export class HighConcurrencyAccountingEngine {
 
   public clearBulkBatch(): void {
     this.state.activeBatch = null;
+  }
+
+  // --- BULK CSV IMPORT FOR ALL DATASETS ---
+  public importCsvDataset(dataset: string, rows: Record<string, string>[]): { count: number; dataset: string } {
+    if (!rows || rows.length === 0) return { count: 0, dataset };
+    let imported = 0;
+
+    switch (dataset) {
+      case 'accounts': {
+        rows.forEach(r => {
+          if (!r.code || !r.name) return;
+          const exists = this.state.masters.accounts.some(a => a.code.toLowerCase() === r.code.toLowerCase());
+          if (!exists) {
+            this.state.masters.accounts.push({
+              id: `acc-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+              code: r.code,
+              name: r.name,
+              group: r.group || 'Current Assets',
+              type: (r.type as any) || 'ASSET',
+              isControlAccount: r.isControlAccount === 'true',
+              active: r.active !== 'false'
+            });
+            imported++;
+          }
+        });
+        break;
+      }
+      case 'items': {
+        rows.forEach(r => {
+          if (!r.code || !r.description) return;
+          const exists = this.state.masters.items.some(i => i.code.toLowerCase() === r.code.toLowerCase());
+          if (!exists) {
+            this.state.masters.items.push({
+              id: `itm-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+              code: r.code,
+              description: r.description,
+              hsnSac: r.hsnSac || '998314',
+              unit: (r.unit as any) || 'NOS',
+              defaultTaxRate: parseInt(r.defaultTaxRate || r.defaultGstRate || '18', 10),
+              defaultLedger: r.defaultLedger || 'Consulting Revenue',
+              active: true
+            });
+            imported++;
+          }
+        });
+        break;
+      }
+      case 'parties': {
+        rows.forEach(r => {
+          const partyName = r.name || r.tradeName || r.legalName;
+          if (!partyName) return;
+          const exists = this.state.masters.parties.some(
+            p => p.name.toLowerCase() === partyName.toLowerCase() || (r.gstin && p.gstin === r.gstin)
+          );
+          if (!exists) {
+            this.state.masters.parties.push({
+              id: `pty-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+              partyType: (r.partyType === 'SUPPLIER' || r.type === 'VENDOR' ? 'SUPPLIER' : 'CUSTOMER') as any,
+              name: partyName,
+              legalName: r.legalName || partyName,
+              gstin: r.gstin || '06AABCB0000A1Z0',
+              stateCode: r.stateCode || (r.gstin ? r.gstin.slice(0, 2) : '06'),
+              phone: r.phone || '+91 98110 00000',
+              creditDays: parseInt(r.creditDays || r.creditPeriodDays || '30', 10),
+              creditLimit: parseFloat(r.creditLimit || '500000'),
+              active: true
+            });
+            imported++;
+          }
+        });
+        break;
+      }
+      case 'receivables': {
+        rows.forEach(r => {
+          const docId = r.id || `INV-${Math.floor(1000 + Math.random() * 9000)}`;
+          const amount = parseFloat(r.amount || '0');
+          if (amount <= 0) return;
+          const exists = this.state.receivables.some(rc => rc.id === docId);
+          if (!exists) {
+            this.state.receivables.push({
+              id: docId,
+              customer: r.customer || 'Direct Client',
+              amount,
+              overdueDays: parseInt(r.overdueDays || '0', 10),
+              promiseDays: null,
+              gstin: r.gstin || '06AABCB4521K1Z7',
+              docDate: r.docDate || new Date().toLocaleDateString('en-IN')
+            });
+            imported++;
+          }
+        });
+        break;
+      }
+      case 'payables': {
+        rows.forEach(r => {
+          const docId = r.id || `BILL-${Math.floor(100 + Math.random() * 900)}`;
+          const amount = parseFloat(r.amount || '0');
+          if (amount <= 0) return;
+          const exists = this.state.payables.some(p => p.id === docId);
+          if (!exists) {
+            this.state.payables.push({
+              id: docId,
+              supplier: r.supplier || 'Key Vendor',
+              amount,
+              dueInDays: parseInt(r.dueInDays || '15', 10),
+              gstin: r.gstin || '06AAECD1177H1Z4',
+              docDate: r.docDate || new Date().toLocaleDateString('en-IN'),
+              priority: (r.priority as any) || 'normal'
+            });
+            imported++;
+          }
+        });
+        break;
+      }
+      case 'bank': {
+        rows.forEach(r => {
+          const amt = parseFloat(r.amount || '0');
+          if (amt === 0) return;
+          const nextId = this.state.bankLines.length > 0 ? Math.max(...this.state.bankLines.map(b => b.id)) + 1 : 1;
+          this.state.bankLines.push({
+            id: nextId,
+            narration: r.narration || 'Bank Entry via CSV',
+            amount: amt,
+            suggestion: amt > 0 ? 'Match with Customer Receivable' : 'Match with Supplier Payable',
+            confidence: 90,
+            status: 'pending',
+            category: r.category || (amt > 0 ? 'Customer Receipt' : 'Vendor Payment')
+          });
+          imported++;
+        });
+        break;
+      }
+      case 'gstr2b': {
+        rows.forEach(r => {
+          if (!r.docNo) return;
+          const taxAmt = parseFloat(r.portalTax || '0');
+          const exists = this.state.gstRows.find(g => g.docNo === r.docNo);
+          if (exists) {
+            exists.portalTax = taxAmt;
+            exists.status = exists.booksTax === taxAmt ? 'matched' : 'mismatch';
+            imported++;
+          } else {
+            this.state.gstRows.push({
+              id: `gst-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+              supplier: r.supplier || 'Portal Supplier',
+              docNo: r.docNo,
+              booksTax: null,
+              portalTax: taxAmt,
+              status: 'portal'
+            });
+            imported++;
+          }
+        });
+        break;
+      }
+    }
+
+    this.logAction(
+      this.getRoleName(),
+      `Bulk CSV Import: Successfully added ${imported} records to ${dataset.toUpperCase()} dataset`,
+      'document'
+    );
+
+    return { count: imported, dataset };
   }
 
   // --- MASTER DATA MANAGEMENT ---
@@ -750,7 +882,113 @@ export class HighConcurrencyAccountingEngine {
     return { success: true, customer: item.customer, docNo: item.id, amount: item.amount };
   }
 
+  // --- SALES INVOICES & RECEIVABLES ---
+  public addSalesInvoice(inv: {
+    customer: string;
+    invoiceNo: string;
+    gstin: string;
+    invoiceDate: string;
+    dueDate: string;
+    taxableValue: number;
+    gstRate: number;
+    ledger: string;
+    notes?: string;
+  }): { success: boolean; message: string; receivable?: ReceivableItem } {
+    const existing = this.state.receivables.some(r => r.id.toLowerCase() === inv.invoiceNo.toLowerCase());
+    if (existing) {
+      return { success: false, message: `Invoice ${inv.invoiceNo} already exists in receivables.` };
+    }
+
+    const taxAmt = calculateTax(inv.taxableValue, inv.gstRate);
+    const totalAmount = inv.taxableValue + taxAmt;
+
+    const dueDateObj = new Date(inv.dueDate);
+    const todayObj = new Date();
+    const diffTime = todayObj.getTime() - dueDateObj.getTime();
+    const overdueDays = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+
+    const newReceivable: ReceivableItem = {
+      id: inv.invoiceNo.toUpperCase(),
+      customer: inv.customer,
+      amount: totalAmount,
+      overdueDays,
+      promiseDays: null,
+      gstin: inv.gstin,
+      docDate: inv.invoiceDate,
+      isDisputed: false
+    };
+
+    this.state.receivables.unshift(newReceivable);
+    this.state.salesTaxOutput += taxAmt;
+
+    // Create posted journal entry
+    const draftForJournal: DocumentDraft = {
+      id: `doc-${Date.now()}`,
+      type: 'Sales Invoice',
+      party: inv.customer,
+      docNo: inv.invoiceNo.toUpperCase(),
+      date: inv.invoiceDate,
+      gstin: inv.gstin,
+      taxableValue: inv.taxableValue,
+      gstRate: inv.gstRate,
+      hsn: '998314',
+      ledger: inv.ledger,
+      ledgerConfidence: 100,
+      status: 'Posted',
+      userEditedLedger: true
+    };
+    draftForJournal.journalVoucher = generateBalancedJournal(draftForJournal);
+    this.state.postedDocuments.unshift(draftForJournal);
+
+    this.logAction(
+      this.getRoleName(),
+      `Created Sales Invoice ${inv.invoiceNo} for ${inv.customer} (₹${totalAmount.toLocaleString('en-IN')}) with balanced journal`,
+      'document'
+    );
+    this.saveToStorage();
+
+    return { success: true, message: `Sales invoice ${inv.invoiceNo} posted successfully`, receivable: newReceivable };
+  }
+
   // --- GST RECONCILIATION ---
+  public addGstRecord(row: {
+    supplier: string;
+    docNo: string;
+    portalTax: number;
+    booksTax?: number;
+  }): { success: boolean; message: string; row: GstReconciliationRow } {
+    const existingIndex = this.state.gstRows.findIndex(g => g.docNo.toLowerCase() === row.docNo.toLowerCase());
+    let status: 'matched' | 'mismatch' | 'portal' | 'books' = 'portal';
+
+    if (row.booksTax !== undefined && row.booksTax !== null) {
+      status = Math.abs(row.booksTax - row.portalTax) < 1 ? 'matched' : 'mismatch';
+    }
+
+    const newRow: GstReconciliationRow = {
+      id: `gst-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      supplier: row.supplier,
+      docNo: row.docNo.toUpperCase(),
+      booksTax: row.booksTax ?? null,
+      portalTax: row.portalTax,
+      status
+    };
+
+    if (existingIndex >= 0) {
+      this.state.gstRows[existingIndex] = { ...this.state.gstRows[existingIndex], ...newRow };
+    } else {
+      this.state.gstRows.unshift(newRow);
+    }
+
+    this.logAction(
+      this.getRoleName(),
+      `Added GSTR-2B entry for ${row.supplier} (${row.docNo}) with ₹${row.portalTax.toLocaleString('en-IN')} portal tax`,
+      'gst'
+    );
+    this.saveToStorage();
+
+    return { success: true, message: `GST row ${row.docNo} recorded`, row: newRow };
+  }
+
   public resolveGstRow(index: number, action: 'accept_portal' | 'ask_supplier' | 'post_bill'): boolean {
     const row = this.state.gstRows[index];
     if (!row) return false;
@@ -766,22 +1004,69 @@ export class HighConcurrencyAccountingEngine {
       row.resolutionNote = 'Communication sent to supplier requesting GSTR-1 upload';
       this.logAction(this.getRoleName(), `GST ${row.docNo}: follow-up notification sent to ${row.supplier}`, 'gst');
     }
+    this.saveToStorage();
     return true;
   }
 
   // --- BANK RECONCILIATION ---
+  public addBankTransactionLine(line: {
+    narration: string;
+    amount: number;
+    category?: string;
+    matchedDocId?: string;
+  }): { success: boolean; line: BankTransactionLine } {
+    const nextId = this.state.bankLines.length > 0 ? Math.max(...this.state.bankLines.map(b => b.id)) + 1 : 1;
+    const isCredit = line.amount > 0;
+    const defaultSuggestion = line.matchedDocId
+      ? `Match with document ${line.matchedDocId}`
+      : isCredit
+        ? 'Customer payment receipt'
+        : 'Supplier payment debit';
+
+    const newLine: BankTransactionLine = {
+      id: nextId,
+      narration: line.narration,
+      amount: line.amount,
+      suggestion: defaultSuggestion,
+      confidence: line.matchedDocId ? 95 : 85,
+      status: 'pending',
+      category: line.category || (isCredit ? 'Customer Receipt' : 'Vendor Payment'),
+      matchedDocId: line.matchedDocId
+    };
+
+    this.state.bankLines.unshift(newLine);
+    this.logAction(
+      this.getRoleName(),
+      `Recorded bank transaction: ${line.narration} (${line.amount >= 0 ? '+' : ''}₹${line.amount.toLocaleString('en-IN')})`,
+      'bank'
+    );
+    this.saveToStorage();
+
+    return { success: true, line: newLine };
+  }
+
   public reconcileBankLine(id: number): boolean {
     const line = this.state.bankLines.find(b => b.id === id);
     if (!line || line.status === 'reconciled') return false;
 
+    // Dynamically match and adjust related invoice/bill if matchedDocId exists
     if (line.matchedDocId) {
-      if (line.id === 1) {
-        this.state.receivables = this.state.receivables.filter(r => r.id !== 'INV-1042');
-      } else if (line.id === 2) {
-        const target = this.state.receivables.find(r => r.id === 'INV-1051');
-        if (target) target.amount -= 100000;
-      } else if (line.id === 3) {
-        this.state.payables = this.state.payables.filter(p => p.id !== 'OL-77');
+      const rec = this.state.receivables.find(r => r.id.toLowerCase() === line.matchedDocId!.toLowerCase());
+      if (rec) {
+        if (rec.amount <= Math.abs(line.amount)) {
+          this.state.receivables = this.state.receivables.filter(r => r.id.toLowerCase() !== line.matchedDocId!.toLowerCase());
+        } else {
+          rec.amount -= Math.abs(line.amount);
+        }
+      }
+
+      const pay = this.state.payables.find(p => p.id.toLowerCase() === line.matchedDocId!.toLowerCase());
+      if (pay) {
+        if (pay.amount <= Math.abs(line.amount)) {
+          this.state.payables = this.state.payables.filter(p => p.id.toLowerCase() !== line.matchedDocId!.toLowerCase());
+        } else {
+          pay.amount -= Math.abs(line.amount);
+        }
       }
     }
 
@@ -792,6 +1077,7 @@ export class HighConcurrencyAccountingEngine {
       `Reconciled bank statement line: ${line.narration} (${line.amount >= 0 ? '+' : ''}₹${line.amount.toLocaleString('en-IN')})`,
       'bank'
     );
+    this.saveToStorage();
     return true;
   }
 
@@ -800,7 +1086,23 @@ export class HighConcurrencyAccountingEngine {
     if (!line) return false;
     line.status = 'exception';
     this.logAction(this.getRoleName(), `Moved line #${id} (${line.narration}) to review exception queue`, 'bank');
+    this.saveToStorage();
     return true;
+  }
+
+  public resetToLiveEmptyState(): void {
+    this.state.receivables = [];
+    this.state.payables = [];
+    this.state.pendingBills = [];
+    this.state.gstRows = [];
+    this.state.bankLines = [];
+    this.state.postedDocuments = [];
+    this.state.currentDraft = null;
+    this.state.activeBatch = null;
+    this.state.cashBalance = 0;
+    this.state.salesTaxOutput = 0;
+    this.saveToStorage();
+    this.logAction(this.getRoleName(), 'Reset workspace to clean live production state (zero transactions)', 'system');
   }
 
   // --- HIGH-CONCURRENCY BENCHMARK SIMULATOR ---

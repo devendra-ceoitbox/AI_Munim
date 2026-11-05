@@ -7,7 +7,9 @@ import {
   generateBalancedJournal,
   calculateAgeingBuckets,
   getEligibleItc,
-  calculateCashForecast
+  calculateCashForecast,
+  parseCsvText,
+  SAMPLE_CSV_TEMPLATES
 } from './accounting.ts';
 import { DocumentDraft, ReceivableItem, PayableItem, GstReconciliationRow } from '../types/accounting.ts';
 
@@ -96,3 +98,22 @@ test('calculateCashForecast generates 30 continuous projection days', () => {
   assert.equal(forecast.points[0].baseCash, 300000);
   assert.ok(typeof forecast.lowestCash === 'number');
 });
+
+test('parseCsvText accurately parses CSV headers and quoted values', () => {
+  const sample = `code,name,amount\nINV-01,"Bluewave, Services",1000\nINV-02,Delta Chemicals,2000`;
+  const result = parseCsvText(sample);
+  assert.equal(result.headers.length, 3);
+  assert.equal(result.rows.length, 2);
+  assert.equal(result.rows[0].name, 'Bluewave, Services');
+  assert.equal(result.rows[1].code, 'INV-02');
+
+  // Verify all 7 dataset templates exist and parse cleanly
+  const datasets = ['accounts', 'items', 'parties', 'receivables', 'payables', 'bank', 'gstr2b'];
+  datasets.forEach(ds => {
+    assert.ok(SAMPLE_CSV_TEMPLATES[ds], `Template for ${ds} must exist`);
+    const parsed = parseCsvText(SAMPLE_CSV_TEMPLATES[ds].content);
+    assert.ok(parsed.headers.length > 0, `${ds} must have headers`);
+    assert.ok(parsed.rows.length > 0, `${ds} must have sample rows`);
+  });
+});
+

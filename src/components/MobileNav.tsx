@@ -12,7 +12,9 @@ import {
   Bot,
   Settings,
   ShieldCheck,
-  LogOut
+  LogOut,
+  BarChart3,
+  UploadCloud
 } from 'lucide-react';
 import { UserRole } from '../types/accounting.ts';
 
@@ -39,12 +41,14 @@ export const MobileNav: React.FC<MobileNavProps> = ({
 
   const mainTabs = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+    { id: 'reports', label: 'Reports', icon: BarChart3 },
     { id: 'capture', label: 'Capture', icon: FileScan },
-    { id: 'collections', label: 'Collections', icon: Users },
-    { id: 'cash', label: 'Forecast', icon: TrendingUp }
+    { id: 'collections', label: 'Collections', icon: Users }
   ];
 
   const moreTabs = [
+    { id: 'bulk-csv', label: 'Bulk CSV Hub', icon: UploadCloud },
+    { id: 'cash', label: 'Cash Forecast', icon: TrendingUp },
     { id: 'payables', label: 'Payables & Bills', icon: Receipt },
     { id: 'gst', label: 'GST Workspace', icon: FileSpreadsheet },
     { id: 'bank', label: 'Bank Reconciliation', icon: Building2 },

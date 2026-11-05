@@ -17,8 +17,11 @@ import { BankReconciliationView } from './components/views/BankReconciliationVie
 import { CashForecastView } from './components/views/CashForecastView.tsx';
 import { AiMunimView } from './components/views/AiMunimView.tsx';
 import { SettingsView } from './components/views/SettingsView.tsx';
+import { VisualReportsView } from './components/views/VisualReportsView.tsx';
+import { BulkCsvUploadView } from './components/views/BulkCsvUploadView.tsx';
 import { WhatsAppModal } from './components/modals/WhatsAppModal.tsx';
 import { AddBillModal } from './components/modals/AddBillModal.tsx';
+import { AddInvoiceModal } from './components/modals/AddInvoiceModal.tsx';
 import { AppState, accountingEngine } from './db/concurrencyEngine.ts';
 import {
   UserRole,
@@ -26,6 +29,7 @@ import {
   ReceivableItem,
   AiChatMessage,
   DocumentType,
+  DocumentDraft,
   AccountMaster,
   ItemMaster,
   TaxCodeMaster,
@@ -37,7 +41,9 @@ import {
 
 const TAB_TITLES: Record<string, string> = {
   overview: 'Executive Financial Overview',
+  reports: 'Visual Reports & Statutory Financials',
   capture: 'Capture & Approve (AI OCR Lab)',
+  'bulk-csv': 'Bulk CSV Upload & Migration Hub',
   payables: 'Payables & Supplier Commitments',
   collections: 'Collections Autopilot & Receivables',
   gst: 'GST Compliance & GSTR-2B Workspace',
@@ -53,6 +59,7 @@ export default function App() {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [whatsAppTarget, setWhatsAppTarget] = useState<ReceivableItem | null>(null);
   const [isAddBillOpen, setIsAddBillOpen] = useState(false);
+  const [isAddInvoiceOpen, setIsAddInvoiceOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -293,6 +300,52 @@ export default function App() {
     }
   };
 
+  const handleUpdateDraftField = async (field: keyof DocumentDraft, value: any) => {
+    accountingEngine.updateDraftField(field, value);
+    updateEngineState();
+    try {
+      await fetch('/api/documents/update-field', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ field, value })
+      });
+    } catch {}
+  };
+
+  const handleQuickApproveAndPost = async (approverName?: string) => {
+    const success = accountingEngine.quickApproveAndPost(approverName);
+    if (success) {
+      updateEngineState();
+      showToast('⚡ Fast-Track Approved & Posted! Balanced journal committed to General Ledger');
+      try {
+        await fetch('/api/documents/quick-approve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ approverName })
+        });
+      } catch {}
+    }
+  };
+
+  const handleCaptureCustomDraft = async (customDraft: DocumentDraft) => {
+    accountingEngine.setDraft(customDraft);
+    updateEngineState();
+    showToast(`AI Vision ingested ${customDraft.sourceFile || customDraft.docNo}`);
+  };
+
+  const handleImportCsvDataset = async (dataset: string, rows: Record<string, string>[]) => {
+    const result = accountingEngine.importCsvDataset(dataset, rows);
+    updateEngineState();
+    try {
+      await fetch('/api/import/csv', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dataset, rows })
+      });
+    } catch {}
+    return result;
+  };
+
   // --- BULK UPLOAD & BATCH OCR ---
   const handleCreateBulkBatch = async (docType: DocumentType, files: Array<{ name: string; size: string }>) => {
     const batch = accountingEngine.createBulkBatch(docType, files);
@@ -414,6 +467,23 @@ export default function App() {
     }
   };
 
+  const handleAddInvoice = async (invoice: any) => {
+    const res = accountingEngine.addSalesInvoice(invoice);
+    if (res.success) {
+      updateEngineState();
+      showToast(`Sales invoice ${invoice.invoiceNo} posted to receivables`);
+      try {
+        await fetch('/api/invoices', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(invoice)
+        });
+      } catch {}
+    } else {
+      showToast(res.message);
+    }
+  };
+
   // --- GST ---
   const handleResolveGst = async (index: number, action: 'accept_portal' | 'ask_supplier' | 'post_bill') => {
     accountingEngine.resolveGstRow(index, action);
@@ -426,6 +496,37 @@ export default function App() {
         body: JSON.stringify({ index, action })
       });
     } catch {}
+  };
+
+  const handleAddGstRow = async (row: any) => {
+    const res = accountingEngine.addGstRecord(row);
+    if (res.success) {
+      updateEngineState();
+      showToast(`GSTR-2B record added for ${row.supplier}`);
+      try {
+        await fetch('/api/gst/rows', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(row)
+        });
+      } catch {}
+    }
+  };
+
+  // --- BANK ---
+  const handleAddBankLine = async (line: any) => {
+    const res = accountingEngine.addBankTransactionLine(line);
+    if (res.success) {
+      updateEngineState();
+      showToast(`Bank transaction recorded: ${line.narration}`);
+      try {
+        await fetch('/api/bank/lines', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(line)
+        });
+      } catch {}
+    }
   };
 
   // --- BANK ---
@@ -752,10 +853,12 @@ export default function App() {
           tabTitle={TAB_TITLES[currentTab] || 'Dashboard'}
           currentRole={state.currentRole}
           currentUser={state.currentUser}
+          companyName={state.company.legalName || 'CEO ITBox Pvt Ltd'}
           onSelectRole={handleSelectRole}
           onLogout={handleLogout}
           onOpenMobileMenu={() => setMobileDrawerOpen(true)}
           onOpenAddBill={() => setIsAddBillOpen(true)}
+          onOpenAddInvoice={() => setIsAddInvoiceOpen(true)}
           onOpenAi={() => setCurrentTab('ai')}
         />
 
@@ -763,7 +866,15 @@ export default function App() {
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
           <div className="max-w-7xl mx-auto">
             {currentTab === 'overview' && (
-              <OverviewView state={state} onNavigateTab={setCurrentTab} />
+              <OverviewView
+                state={state}
+                onNavigateTab={setCurrentTab}
+                onOpenAddBill={() => setIsAddBillOpen(true)}
+                onOpenAddInvoice={() => setIsAddInvoiceOpen(true)}
+              />
+            )}
+            {currentTab === 'reports' && (
+              <VisualReportsView state={state} />
             )}
             {currentTab === 'capture' && (
               <CaptureApproveView
@@ -773,9 +884,19 @@ export default function App() {
                 onApproveAndPost={handleApproveDraft}
                 onClearDraft={handleClearDraft}
                 onUpdateDraftLedger={handleUpdateDraftLedger}
+                onUpdateDraftField={handleUpdateDraftField}
+                onQuickApproveAndPost={handleQuickApproveAndPost}
+                onCaptureCustomDraft={handleCaptureCustomDraft}
                 onCreateBulkBatch={handleCreateBulkBatch}
                 onPostBulkBatch={handlePostBulkBatch}
                 onClearBulkBatch={handleClearBulkBatch}
+              />
+            )}
+            {currentTab === 'bulk-csv' && (
+              <BulkCsvUploadView
+                state={state}
+                onImportDataset={handleImportCsvDataset}
+                onShowToast={showToast}
               />
             )}
             {currentTab === 'payables' && (
@@ -792,6 +913,7 @@ export default function App() {
                 onOpenWhatsApp={item => setWhatsAppTarget(item)}
                 onRecordPromise={handleRecordPromise}
                 onToggleDispute={handleToggleDispute}
+                onOpenAddInvoice={() => setIsAddInvoiceOpen(true)}
               />
             )}
             {currentTab === 'gst' && (
@@ -799,6 +921,7 @@ export default function App() {
                 state={state}
                 onResolveGst={handleResolveGst}
                 onNavigateToCapture={() => setCurrentTab('capture')}
+                onAddGstRecord={handleAddGstRow}
               />
             )}
             {currentTab === 'bank' && (
@@ -806,6 +929,7 @@ export default function App() {
                 state={state}
                 onConfirmBankLine={handleConfirmBankLine}
                 onSendToException={handleSendToException}
+                onAddBankLine={handleAddBankLine}
               />
             )}
             {currentTab === 'cash' && (
@@ -865,6 +989,14 @@ export default function App() {
         onClose={() => setIsAddBillOpen(false)}
         onSubmit={handleAddBill}
         existingDocNos={[...state.payables.map(p => p.id), ...state.pendingBills.map(p => p.docNo)]}
+      />
+
+      {/* Add Real Customer Sales Invoice Modal */}
+      <AddInvoiceModal
+        isOpen={isAddInvoiceOpen}
+        onClose={() => setIsAddInvoiceOpen(false)}
+        onSubmit={handleAddInvoice}
+        existingInvoiceNos={state.receivables.map(r => r.id)}
       />
 
       {/* Toast Notification */}
